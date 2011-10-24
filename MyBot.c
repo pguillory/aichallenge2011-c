@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "game.h"
+#include <math.h>
+#include "globals.h"
 #include "map.h"
+#include "bot.h"
 
 void send_go_command() {
     puts("go");
@@ -32,6 +34,8 @@ void read_command(char *command) {
     switch (word_count) {
         case 1:
             if (0 == strcmp(words[0], "go")) {
+                map_recalculate();
+                printf("map:\n%s\n", map_to_string());
                 bot_turn();
                 send_go_command();
             } else if (0 == strcmp(words[0], "ready")) {
@@ -39,6 +43,7 @@ void read_command(char *command) {
                 send_go_command();
             } else if (0 == strcmp(words[0], "end")) {
                 // game over
+                map_new_turn();
             }
             break;
 
@@ -46,8 +51,10 @@ void read_command(char *command) {
             if (0 == strcmp(words[0], "turn")) {
                 turn = atoi(words[1]);
                 if (turn > 0) {
+                    printf("turn %i\n", turn);
                     map_new_turn();
                 } else {
+                    puts("setup");
                     map_blank();
                 }
             } else if (0 == strcmp(words[0], "loadtime")) {
@@ -62,6 +69,7 @@ void read_command(char *command) {
                 turns = atoi(words[1]);
             } else if (0 == strcmp(words[0], "viewradius2")) {
                 viewradius2 = atoi(words[1]);
+                viewradius = sqrt(viewradius2);
             } else if (0 == strcmp(words[0], "attackradius2")) {
                 attackradius2 = atoi(words[1]);
             } else if (0 == strcmp(words[0], "spawnradius2")) {
@@ -73,17 +81,22 @@ void read_command(char *command) {
 
         case 3:
             if (0 == strcmp(words[0], "w")) {
+                printf("water at %s:%s\n", words[1], words[2]);
                 map_discover_water(atoi(words[1]), atoi(words[2]));
             } else if (0 == strcmp(words[0], "f")) {
+                printf("food at %s:%s\n", words[1], words[2]);
                 map_discover_food(atoi(words[1]), atoi(words[2]));
             }
             break;
 
         case 4:
             if (0 == strcmp(words[0], "h")) {
+                printf("hill at %s:%s belonging to %s\n", words[1], words[2], words[3]);
                 map_discover_hill(atoi(words[1]), atoi(words[2]), atoi(words[3]));
             } else if (0 == strcmp(words[0], "a")) {
+                printf("ant at %s:%s belonging to %s\n", words[1], words[2], words[3]);
                 map_discover_ant(atoi(words[1]), atoi(words[2]), atoi(words[3]));
+                send_order_command(atoi(words[1]), atoi(words[2]), 'W');
             } else if (0 == strcmp(words[0], "d")) {
                 // dead ant
             }
@@ -92,20 +105,21 @@ void read_command(char *command) {
 }
 
 void read_commands_forever() {
-    char buffer[10 * 1024];
+    char command[10 * 1024];
     char *write_ptr;
     char c;
 
-    while (1) {
-        write_ptr = buffer;
+    do {
+        write_ptr = command;
         while (1) {
             c = getchar();
-            if (c == '\n') break;
+            if (c == '\n' || c == EOF) break;
             *write_ptr++ = c;
         }
         *write_ptr = '\0';
-        // read_command(buffer);
-    }
+
+        read_command(command);
+    } while (c != EOF);
 }
 
 int main(int argc, char *argv[]) {

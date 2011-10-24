@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-O3 -funroll-loops -c -Wall
 LDFLAGS=-O2 -lm
-SOURCES=MyBot.c game.c map.c
+SOURCES=MyBot.c globals.c map.c bot.c
 OBJECTS=$(SOURCES:.c=.o)
 EXECUTABLE=MyBot
 

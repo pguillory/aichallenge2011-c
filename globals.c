@@ -1,7 +1,5 @@
-#define __GAME_C
-
 #include <assert.h>
-#include "game.h"
+#include "globals.h"
 
 int abs(int x) {
     return (x >= 0) ? x : -x;
@@ -24,12 +22,14 @@ int distance2(int row1, int col1, int row2, int col2) {
     return dr * dr + dc * dc;
 }
 
-void bot_init() {
-
+int normalize_row(int row) {
+    while (row < rows) row += rows;
+    return row % rows;
 }
 
-void bot_turn() {
-    
+int normalize_col(int col) {
+    while (col < cols) col += cols;
+    return col % cols;
 }
 
 #ifdef UNIT_TESTS
@@ -43,6 +43,24 @@ int main(int argc, char *argv[]) {
     assert(distance2(0, 0,  0,  2) == 4);
     assert(distance2(0, 0,  2,  2) == 8);
     assert(distance2(0, 0,  9,  9) == 2);
+
+    rows = 10;
+    cols = 10;
+
+    assert(normalize_row(-2) == 8);
+    assert(normalize_row(-1) == 9);
+    assert(normalize_row(0) == 0);
+    assert(normalize_row(1) == 1);
+    assert(normalize_row(9) == 9);
+    assert(normalize_row(11) == 1);
+    
+    assert(normalize_col(-2) == 8);
+    assert(normalize_col(-1) == 9);
+    assert(normalize_col(0) == 0);
+    assert(normalize_col(1) == 1);
+    assert(normalize_col(9) == 9);
+    assert(normalize_col(10) == 0);
+    assert(normalize_col(11) == 1);
 
     puts("ok");
     return 0;
