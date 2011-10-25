@@ -32,6 +32,15 @@ int normalize_col(int col) {
     return col % cols;
 }
 
+void init_log() {
+    logfile = fopen("log.txt", "w");
+}
+
+void logs(char *s) {
+    fputs(s, logfile);
+    fputs("\n\n", logfile);
+}
+
 #ifdef UNIT_TESTS
 int main(int argc, char *argv[]) {
     rows = 10;

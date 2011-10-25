@@ -1,5 +1,7 @@
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "globals.h"
 #include "map.h"
 
@@ -121,17 +123,24 @@ void map_new_turn() {
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
             map[row][col] &= SQUARE_SEEN_MASK | SQUARE_WATER_MASK | SQUARE_HILL_MASK;
-            aroma[row][col] = 0;
+            if (map[row][col] & SQUARE_WATER_MASK) {
+                aroma[row][col] = -999;
+            } else {
+                aroma[row][col] = 0;
+            }
         }
     }
 }
 
 void see(int row, int col) {
     int row2, col2;
-    for (row2 = 0; row2 < rows; row2++) {
-        // row2n = normalize_row(row2);
-        for (col2 = 0; col2 < cols; col2++) {
-            // col2n = normalize_col(col2);
+    int viewradius, dr, dc;
+
+    viewradius = sqrt(viewradius2);
+    for (dr = -viewradius; dr <= viewradius; dr++) {
+        row2 = normalize_row(row + dr);
+        for (dc = -viewradius; dc <= viewradius; dc++) {
+            col2 = normalize_col(col + dc);
             if (distance2(row, col, row2, col2) <= viewradius2) {
                 map[row2][col2] |= SQUARE_SEEN_MASK | SQUARE_VISIBLE_MASK;
             }
@@ -147,24 +156,24 @@ void calculate_smell() {
             square = map[row][col];
             if (square & SQUARE_ANT_MASK) {
                 if (owner[row][col]) {
-                    smell(row, col, -1, 0.8);
+                    smell(row, col, -1, 0.9);
                 } else {
-                    smell(row, col, -1, 0.8);
+                    smell(row, col, -1, 0.9);
                     see(row, col);
                 }
             }
             if (square & SQUARE_HILL_MASK) {
                 if (owner[row][col]) {
-                    smell(row, col, 1, 0.8);
-                } else {
-                    smell(row, col, -1, 0.5);
+                    smell(row, col, 1, 0.9);
+                // } else {
+                //     smell(row, col, -1, 0.5);
                 }
             }
             if (square & SQUARE_FOOD_MASK) {
-                smell(row, col, 2, 0.9);
+                smell(row, col, 2, 0.8);
             }
             if ((square & SQUARE_SEEN_MASK) == 0) {
-                smell(row, col, 1, 0.8);
+                smell(row, col, 1, 0.9);
             }
         }
     }
@@ -174,10 +183,8 @@ void calculate_sight() {
     int row, col;
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
-            if (map[row][col] & SQUARE_ANT_MASK) {
-                if (owner[row][col] == 0) {
-                    see(row, col);
-                }
+            if ((map[row][col] & SQUARE_ANT_MASK) && (owner[row][col] == 0)) {
+                see(row, col);
             }
         }
     }
@@ -189,10 +196,14 @@ void calculate_direction() {
     float options[4];
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
-            direction[row][col] = '.';
-
-            if (!(map[row][col] & SQUARE_SEEN_MASK) || (map[row][col] & SQUARE_WATER_MASK)) {
+            if (!(map[row][col] & SQUARE_SEEN_MASK)) {
+                direction[row][col] = '?';
                 continue;
+            } else if (map[row][col] & SQUARE_WATER_MASK) {
+                direction[row][col] = '.';
+                continue;
+            } else {
+                direction[row][col] = '*';
             }
 
             options[NORTH] = aroma[normalize_row(row - 1)][col];
@@ -345,37 +356,110 @@ char *map_to_string() {
     return buffer;
 }
 
-void puts_aroma() {
+// void puts_aroma() {
+//     int row, col;
+// 
+//     for (row = 0; row < rows; row++) {
+//         for (col = 0; col < cols; col++) {
+//             printf("| %0.2f ", aroma[row][col]);
+//         }
+//         printf("|\n");
+//     }
+// }
+
+char *map_aroma_to_string() {
+    static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
+    char *output = buffer;
+    int row, col;
+    char c;
+    int v;
+
+    for (row = 0; row < rows; row++) {
+        for (col = 0; col < cols; col++) {
+            v = aroma[row][col] * 1;
+            if (v < 0) {
+                c = '-';
+            } else if (v >= 10) {
+                c = '+';
+            } else {
+                c = (char) v + '0';
+            }
+            // if (c < '0' || c > '9') {
+            // }
+            *output++ = c;
+        }
+        *output++ = '\n';
+    }
+    *--output = '\0';
+    return buffer;
+}
+
+char *map_directions_to_string() {
+    static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
+    char *output = buffer;
     int row, col;
 
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
-            printf("| %0.2f ", aroma[row][col]);
+            switch (direction[row][col]) {
+                case 'N':
+                    *output++ = '^';
+                    break;
+                case 'S':
+                    *output++ = 'v';
+                    break;
+                case 'E':
+                    *output++ = '>';
+                    break;
+                case 'W':
+                    *output++ = '<';
+                    break;
+                default:
+                    *output++ = direction[row][col];
+                    break;
+            }
         }
-        printf("|\n");
+        *output++ = '\n';
     }
+    *--output = '\0';
+    return buffer;
 }
 
-void puts_direction() {
+void issue_orders() {
     int row, col;
+    char c;
+
+    map_recalculate();
+
+    logs(map_to_string());
+    logs(map_aroma_to_string());
+    logs(map_directions_to_string());
+    // puts_aroma2();
+    // puts_direction();
+    // puts_aroma();
 
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
-            printf("%c", direction[row][col]);
+            if ((map[row][col] & SQUARE_ANT_MASK) && (owner[row][col] == 0)) {
+                c = direction[row][col];
+                if (c == 'N' || c == 'S' || c == 'E' || c == 'W') {
+                    printf("o %i %i %c\n", row, col, direction[row][col]);
+                }
+            }
         }
-        printf("\n");
     }
 }
+
 
 #ifdef UNIT_TESTS
 #undef UNIT_TESTS
 #include "globals.c"
 int main(int argc, char *argv[]) {
-    // char input[MAX_ROWS * MAX_COLS + MAX_COLS];
-    // 
-    // strcpy(input, "?.%*\naB2?");
-    // map_load_from_string(input);
-    // assert(strcmp(input, map_to_string()) == 0);
+    char input[MAX_ROWS * MAX_COLS + MAX_COLS];
+
+    strcpy(input, "?.%*\naB2?");
+    map_load_from_string(input);
+    assert(strcmp(input, map_to_string()) == 0);
 
     map_load_from_string(".%*%");
     assert(rows == 1);
@@ -394,6 +478,9 @@ int main(int argc, char *argv[]) {
     map_load_from_string(".%*.");
     assert(aroma[0][0] > 0);
 
+    map_load_from_string("..*%");
+    assert(direction[0][0] == 'E');
+
     map_load_from_string(".%...%*%\n"
                          "...%...%\n"
                          "%%%%%%%%");
@@ -408,15 +495,15 @@ int main(int argc, char *argv[]) {
     assert(aroma[0][4] > aroma[0][3]);
     assert(aroma[0][5] == 0);
 
+    puts(map_to_string());
+    puts("");
+    puts(map_directions_to_string());
     assert(direction[0][0] == 'S');
     assert(direction[0][1] == '.');
     assert(direction[0][2] == 'E');
     assert(direction[0][3] == 'E');
     assert(direction[0][4] == 'S');
     assert(direction[0][5] == '.');
-
-    map_load_from_string("..*%");
-    assert(direction[0][0] == 'E');
 
     puts("ok");
     return 0;

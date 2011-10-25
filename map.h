@@ -12,5 +12,6 @@ void map_discover_hill(int row, int col, int player);
 void map_discover_ant_on_hill(int row, int col, int player);
 void map_load_from_string(char *input);
 char *map_to_string();
+void issue_orders();
 
 #endif
