@@ -4,8 +4,9 @@ cd `dirname $0`
 cd ../tools
 # --player_seed 42 
 # --map_file maps/test.map \
-./playgame.py --end_wait=0.25 --verbose --log_dir game_logs --turns 50 \
- --map_file maps/symmetric_random_walk/random_walk_05.map \
+./playgame.py --end_wait=0.25 --verbose --log_dir game_logs --turns 1000 \
+ --fill --strict \
+ --map_file maps/multi_hill_maze/multi_maze_15.map \
  "$@" \
  "../c/MyBot" \
  "python sample_bots/python/HunterBot.py" \

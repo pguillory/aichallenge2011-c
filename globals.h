@@ -1,11 +1,6 @@
 #ifndef __GAME_H
 #define __GAME_H
 
-#define NORTH 0
-#define SOUTH 1
-#define EAST 2
-#define WEST 3
-
 #define MAX_ROWS 200
 #define MAX_COLS 200
 

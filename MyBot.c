@@ -4,13 +4,11 @@
 #include <math.h>
 #include "globals.h"
 #include "map.h"
+#include "aroma.h"
+#include "directions.h"
 #include "bot.h"
+#include "server.h"
 #include "handler.h"
-
-void send_go_command() {
-    puts("go");
-    fflush(stdout);
-}
 
 void read_command(char *command) {
     char *words[256];
@@ -28,17 +26,25 @@ void read_command(char *command) {
         p++;
     }
 
+    int row, col, player;
     switch (word_count) {
         case 1:
             if (0 == strcmp(words[0], "go")) {
-                issue_orders();
-                send_go_command();
+                map_end_turn();
+                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
+                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
+                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
+                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
+                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
+                directions_calculate();
+                bot_issue_orders();
+                server_go();
             } else if (0 == strcmp(words[0], "ready")) {
                 bot_init();
-                send_go_command();
+                server_go();
             } else if (0 == strcmp(words[0], "end")) {
                 // game over
-                map_new_turn();
+                map_start_turn();
             }
             break;
 
@@ -46,11 +52,7 @@ void read_command(char *command) {
             if (0 == strcmp(words[0], "turn")) {
                 turn = atoi(words[1]);
                 fprintf(logfile, "start turn %i\n", turn);
-                // if (turn == 0) {
-                //     map_blank();
-                // } else {
-                    map_new_turn();
-                // }
+                map_start_turn();
             } else if (0 == strcmp(words[0], "loadtime")) {
                 loadtime = atoi(words[1]);
             } else if (0 == strcmp(words[0], "turntime")) {
@@ -75,17 +77,29 @@ void read_command(char *command) {
 
         case 3:
             if (0 == strcmp(words[0], "w")) {
-                map_discover_water(atoi(words[1]), atoi(words[2]));
+                row = atoi(words[1]);
+                col = atoi(words[2]);
+                map[row][col] |= SQUARE_SEEN_MASK | SQUARE_WATER_MASK;
             } else if (0 == strcmp(words[0], "f")) {
-                map_discover_food(atoi(words[1]), atoi(words[2]));
+                row = atoi(words[1]);
+                col = atoi(words[2]);
+                map[row][col] |= SQUARE_SEEN_MASK | SQUARE_FOOD_MASK;
             }
             break;
 
         case 4:
             if (0 == strcmp(words[0], "h")) {
-                map_discover_hill(atoi(words[1]), atoi(words[2]), atoi(words[3]));
+                row = atoi(words[1]);
+                col = atoi(words[2]);
+                player = atoi(words[3]);
+                map[row][col] |= SQUARE_SEEN_MASK | SQUARE_HILL_MASK;
+                owner[row][col] = player;
             } else if (0 == strcmp(words[0], "a")) {
-                map_discover_ant(atoi(words[1]), atoi(words[2]), atoi(words[3]));
+                row = atoi(words[1]);
+                col = atoi(words[2]);
+                player = atoi(words[3]);
+                map[row][col] |= SQUARE_SEEN_MASK | SQUARE_ANT_MASK;
+                owner[row][col] = player;
             } else if (0 == strcmp(words[0], "d")) {
                 // dead ant
             }
@@ -114,7 +128,8 @@ void read_commands_forever() {
 int main(int argc, char *argv[]) {
     install_handlers();
     init_log();
-    map_blank();
+    map_reset();
+    aroma_reset();
     read_commands_forever();
     return 0;
 }
