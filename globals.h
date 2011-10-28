@@ -1,6 +1,11 @@
 #ifndef __GAME_H
 #define __GAME_H
 
+#define NORTH 0
+#define EAST 1
+#define SOUTH 2
+#define WEST 3
+
 #define MAX_ROWS 200
 #define MAX_COLS 200
 
@@ -17,6 +22,7 @@ int spawnradius2;   /* = 1 */
 int player_seed;    /* = 42 */
 
 int distance2(int row1, int col1, int row2, int col2);
+void neighbor(int row, int col, int direction, int *row2, int *col2);
 int normalize_row(int row);
 int normalize_col(int col);
 

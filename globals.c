@@ -22,6 +22,27 @@ int distance2(int row1, int col1, int row2, int col2) {
     return dr * dr + dc * dc;
 }
 
+void neighbor(int row, int col, int direction, int *row2, int *col2) {
+    switch (direction) {
+        case NORTH:
+            *row2 = normalize_row(row - 1);
+            *col2 = col;
+            break;
+        case SOUTH:
+            *row2 = normalize_row(row + 1);
+            *col2 = col;
+            break;
+        case EAST:
+            *row2 = row;
+            *col2 = normalize_col(col + 1);
+            break;
+        case WEST:
+            *row2 = row;
+            *col2 = normalize_col(col - 1);
+            break;
+    }
+}
+
 int normalize_row(int row) {
     while (row < rows) row += rows;
     return row % rows;
@@ -38,7 +59,7 @@ void init_log() {
 
 void logs(char *s) {
     fputs(s, logfile);
-    fputs("\n\n", logfile);
+    fputs("\n", logfile);
 }
 
 #ifdef UNIT_TESTS

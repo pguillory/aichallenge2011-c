@@ -2,6 +2,9 @@
 #include <string.h>
 #include "globals.h"
 #include "map.h"
+#include "holy_ground.h"
+#include "threat.h"
+#include "mystery.h"
 #include "aroma.h"
 #include "directions.h"
 #include "server.h"
@@ -16,26 +19,17 @@ void bot_issue_orders() {
     int row2, col2;
     char direction;
 
-    // calculate_sight();
-    // 
-    logs(map_to_string());
-    logs(aroma_to_string());
-    logs(directions_to_string());
-    // puts_aroma2();
-    // puts_direction();
-    // puts_aroma();
-
     static char available[MAX_ROWS][MAX_COLS];
 
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
-            available[row][col] = !(map[row][col] & SQUARE_ANT_MASK);
+            available[row][col] = !(map[row][col] & SQUARE_ANT);
         }
     }
 
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
-            if ((map[row][col] & SQUARE_ANT_MASK) && (owner[row][col] == 0)) {
+            if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
                 direction = directions[row][col];
                 switch (direction) {
                     case 'N':

@@ -4,11 +4,28 @@
 #include <math.h>
 #include "globals.h"
 #include "map.h"
+#include "holy_ground.h"
+#include "threat.h"
+#include "mystery.h"
 #include "aroma.h"
 #include "directions.h"
 #include "bot.h"
 #include "server.h"
 #include "handler.h"
+
+void dump_state() {
+    // logs("map:");
+    // logs(map_to_string());
+    // logs("holy ground:");
+    // logs(holy_ground_to_string());
+    // logs("threat:");
+    // logs(threat_to_string());
+    // // logs(mystery_to_string());
+    // logs("aroma:");
+    // logs(aroma_to_string());
+    // logs("directions:");
+    // logs(directions_to_string());
+}
 
 void read_command(char *command) {
     char *words[256];
@@ -30,29 +47,32 @@ void read_command(char *command) {
     switch (word_count) {
         case 1:
             if (0 == strcmp(words[0], "go")) {
-                map_end_turn();
-                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
+                fprintf(logfile, "end turn %i\n", turn);
+                map_finish_update();
+                holy_ground_calculate();
+                threat_calculate();
+                mystery_iterate();
                 aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
                 aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
                 directions_calculate();
+                dump_state();
                 bot_issue_orders();
                 server_go();
             } else if (0 == strcmp(words[0], "ready")) {
                 bot_init();
                 server_go();
             } else if (0 == strcmp(words[0], "end")) {
-                // game over
-                map_start_turn();
+                exit(0);
             }
             break;
 
         case 2:
             if (0 == strcmp(words[0], "turn")) {
                 turn = atoi(words[1]);
-                fprintf(logfile, "start turn %i\n", turn);
-                map_start_turn();
+                if (turn > 0) {
+                    fprintf(logfile, "start turn %i\n", turn);
+                    map_begin_update();
+                }
             } else if (0 == strcmp(words[0], "loadtime")) {
                 loadtime = atoi(words[1]);
             } else if (0 == strcmp(words[0], "turntime")) {
@@ -79,11 +99,11 @@ void read_command(char *command) {
             if (0 == strcmp(words[0], "w")) {
                 row = atoi(words[1]);
                 col = atoi(words[2]);
-                map[row][col] |= SQUARE_SEEN_MASK | SQUARE_WATER_MASK;
+                update[row][col] |= SQUARE_WATER;
             } else if (0 == strcmp(words[0], "f")) {
                 row = atoi(words[1]);
                 col = atoi(words[2]);
-                map[row][col] |= SQUARE_SEEN_MASK | SQUARE_FOOD_MASK;
+                update[row][col] |= SQUARE_FOOD;
             }
             break;
 
@@ -92,13 +112,13 @@ void read_command(char *command) {
                 row = atoi(words[1]);
                 col = atoi(words[2]);
                 player = atoi(words[3]);
-                map[row][col] |= SQUARE_SEEN_MASK | SQUARE_HILL_MASK;
+                update[row][col] |= SQUARE_HILL;
                 owner[row][col] = player;
             } else if (0 == strcmp(words[0], "a")) {
                 row = atoi(words[1]);
                 col = atoi(words[2]);
                 player = atoi(words[3]);
-                map[row][col] |= SQUARE_SEEN_MASK | SQUARE_ANT_MASK;
+                update[row][col] |= SQUARE_ANT;
                 owner[row][col] = player;
             } else if (0 == strcmp(words[0], "d")) {
                 // dead ant
@@ -129,6 +149,7 @@ int main(int argc, char *argv[]) {
     install_handlers();
     init_log();
     map_reset();
+    mystery_reset();
     aroma_reset();
     read_commands_forever();
     return 0;
