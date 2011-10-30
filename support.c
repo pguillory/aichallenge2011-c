@@ -4,8 +4,9 @@
 
 void support_calculate() {
     int row, col;
+    int dr, dc;
     int row2, col2;
-    int direction;
+    // int direction;
 
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
@@ -16,11 +17,17 @@ void support_calculate() {
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
             if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
-                support[row][col] += 1;
-                for (direction = 0; direction < 4; direction++) {
-                    neighbor(row, col, direction , &row2, &col2);
-                    support[row2][col2] += 1;
+                for (dr = -1; dr <= +1; dr++) {
+                    row2 = normalize_row(row + dr);
+                    for (dc = -1; dc <= +1; dc++) {
+                        col2 = normalize_col(col + dc);
+                        support[row2][col2] += 1;
+                    }
                 }
+                // for (direction = 0; direction < 4; direction++) {
+                //     neighbor(row, col, direction , &row2, &col2);
+                //     support[row2][col2] += 1;
+                // }
             }
         }
     }
@@ -52,9 +59,9 @@ int main(int argc, char *argv[]) {
                  ".a...\n"
                  ".....\n"
                  ".....";
-    expected_output = "01000\n"
+    expected_output = "11100\n"
                       "11100\n"
-                      "01000\n"
+                      "11100\n"
                       "00000";
     map_load_from_string(map_string);
     support_calculate();
@@ -65,9 +72,9 @@ int main(int argc, char *argv[]) {
                  ".aa..\n"
                  ".....\n"
                  ".....";
-    expected_output = "01100\n"
+    expected_output = "12210\n"
                       "12210\n"
-                      "01100\n"
+                      "12210\n"
                       "00000";
     map_load_from_string(map_string);
     support_calculate();

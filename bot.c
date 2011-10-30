@@ -33,8 +33,7 @@ void bot_issue_orders() {
                 direction = directions[row][col];
                 switch (direction) {
                     case 'N':
-                        row2 = normalize_row(row - 1);
-                        col2 = col;
+                        neighbor(row, col, NORTH, &row2, &col2);
                         if (available[row2][col2]) {
                             available[row][col] = 1;
                             available[row2][col2] = 0;
@@ -42,8 +41,7 @@ void bot_issue_orders() {
                         }
                         break;
                     case 'S':
-                        row2 = normalize_row(row + 1);
-                        col2 = col;
+                        neighbor(row, col, SOUTH, &row2, &col2);
                         if (available[row2][col2]) {
                             available[row][col] = 1;
                             available[row2][col2] = 0;
@@ -51,8 +49,7 @@ void bot_issue_orders() {
                         }
                         break;
                     case 'E':
-                        row2 = row;
-                        col2 = normalize_col(col + 1);
+                        neighbor(row, col, EAST, &row2, &col2);
                         if (available[row2][col2]) {
                             available[row][col] = 1;
                             available[row2][col2] = 0;
@@ -60,8 +57,7 @@ void bot_issue_orders() {
                         }
                         break;
                     case 'W':
-                        row2 = row;
-                        col2 = normalize_col(col - 1);
+                        neighbor(row, col, WEST, &row2, &col2);
                         if (available[row2][col2]) {
                             available[row][col] = 1;
                             available[row2][col2] = 0;

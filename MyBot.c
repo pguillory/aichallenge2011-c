@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include "globals.h"
 #include "map.h"
 #include "holy_ground.h"
@@ -15,7 +16,7 @@
 
 void dump_state() {
     // logs("map:");
-    // logs(map_to_string());
+    logs(map_to_string());
     // logs("holy ground:");
     // logs(holy_ground_to_string());
     // logs("threat:");
@@ -25,6 +26,11 @@ void dump_state() {
     // logs(aroma_to_string());
     // logs("directions:");
     // logs(directions_to_string());
+}
+
+long int turn_start, turn_end;
+long int now() {
+    return clock() / (CLOCKS_PER_SEC / 1000);
 }
 
 void read_command(char *command) {
@@ -48,6 +54,7 @@ void read_command(char *command) {
         case 1:
             if (0 == strcmp(words[0], "go")) {
                 fprintf(logfile, "end turn %i\n", turn);
+                turn_start = now();
                 map_finish_update();
                 holy_ground_calculate();
                 threat_calculate();
@@ -58,6 +65,8 @@ void read_command(char *command) {
                 dump_state();
                 bot_issue_orders();
                 server_go();
+                turn_end = now();
+                fprintf(logfile, "%li ms elapsed\n", turn_end - turn_start);
             } else if (0 == strcmp(words[0], "ready")) {
                 bot_init();
                 server_go();

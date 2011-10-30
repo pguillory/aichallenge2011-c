@@ -15,5 +15,6 @@ $(EXECUTABLE): $(OBJECTS)
 
 clean:
 	rm -f ${EXECUTABLE} ${OBJECTS} *.d
+	rm -f log.txt
 
 .PHONY: all clean

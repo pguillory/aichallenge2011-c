@@ -13,32 +13,33 @@ void directions_calculate() {
     char c;
     int row2, col2;
     int direction;
-    float max_smell;
+    float max_aroma;
     float min_threat;
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
             if (map[row][col] & SQUARE_LAND) {
                 if (map[row][col] & SQUARE_FOOD) {
                     c = '*';
+                } else if (killzone[row][col]) {
+                    c = '!';
                 } else {
                     c = '+';
 
-                    max_smell = aroma[row][col];
                     min_threat = threat[row][col];
+                    max_aroma = aroma[row][col];
 
                     for (direction = 0; direction < 4; direction++) {
                         neighbor(row, col, direction, &row2, &col2);
 
-                        if (min_threat > threat[row2][col2]) {
-                            max_smell = aroma[row2][col2];
+                        if (map[row2][col2] & SQUARE_FOOD) {
+                            c = '+';
+                            break;
+                        }
+
+                        if ((min_threat > threat[row2][col2]) || ((min_threat == threat[row2][col2]) && (max_aroma < aroma[row2][col2]))) {
                             min_threat = threat[row2][col2];
+                            max_aroma = aroma[row2][col2];
                             c = direction_symbols[direction];
-                        } else if (min_threat >= threat[row2][col2]) {
-                            if (max_smell < aroma[row2][col2]) {
-                                max_smell = aroma[row2][col2];
-                                min_threat = threat[row2][col2];
-                                c = direction_symbols[direction];
-                            }
                         }
                     }
                 }
@@ -77,7 +78,9 @@ char *directions_to_string() {
 #include "mystery.c"
 #include "aroma.c"
 int main(int argc, char *argv[]) {
+    char *expected;
     attackradius2 = 5;
+    viewradius2 = 55;
     // puts(aroma_to_string());
     // printf("%i %i %i %i\n", map[0][0], map[0][1], map[0][2], map[0][3]);
 
@@ -122,24 +125,37 @@ int main(int argc, char *argv[]) {
                          ".........%\n"
                          "........*%\n"
                          "%%%%%%%%%%");
+    expected = "EEEEEESSS-\n"
+               "SE+NNEESS-\n"
+               "S+N!!!EES-\n"
+               "SW!!!!!ES-\n"
+               "SW!!!!!ES-\n"
+               "SS!!!!!SS-\n"
+               "ESS!!!ESS-\n"
+               "EESSSEEE+-\n"
+               "EEEEEEE+*-\n"
+               "----------";
+    holy_ground_calculate();
+    threat_calculate();
+    mystery_reset();
+    aroma_stabilize();
+    directions_calculate();
+    // puts(directions_to_string());
+    assert(strcmp(directions_to_string(), expected) == 0);
+
+    map_load_from_string(".aa...b.....*......................\n"
+                         ".aa.........*......................");
     holy_ground_calculate();
     threat_calculate();
     mystery_reset();
     aroma_stabilize();
     directions_calculate();
 
-    // puts(map_to_string()); puts("\n");
-    // puts(threat_to_string()); puts("\n");
-    // puts(aroma_to_string()); puts("\n");
-    // puts(directions_to_string()); puts("\n");
+    // puts(threat_to_string());
+    // puts(aroma_to_string());
+    // puts(directions_to_string());
 
-    // assert(strcmp(threat_to_string(), threat_string) == 0);
 
-    // printf("%f %f %f %f %f\n",  aroma[0][0], aroma[0][1], aroma[0][2], aroma[0][3], aroma[0][4]);
-    // printf("%f %f %f\n",        aroma[1][0], aroma[1][1], aroma[1][2], aroma[1][3], aroma[1][4]);
-    // printf("%f %f\n",           aroma[2][0], aroma[2][1], aroma[2][2], aroma[2][3], aroma[2][4]);
-    // printf("%f\n",              aroma[3][0], aroma[3][1], aroma[3][2], aroma[3][3], aroma[3][4]);
-    // printf("%f\n",              aroma[4][0], aroma[4][1], aroma[4][2], aroma[4][3], aroma[4][4]);
 
     // aroma_iterate();
 

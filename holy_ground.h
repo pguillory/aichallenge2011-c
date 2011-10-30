@@ -3,6 +3,8 @@
 
 #include "globals.h"
 
+#define HOLY_GROUND_RANGE 10
+
 unsigned char holy_ground[MAX_ROWS][MAX_COLS];
 
 void holy_ground_calculate();

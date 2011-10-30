@@ -10,11 +10,12 @@
 
 #define AROMA_FOOD              100.0
 #define AROMA_INTRUDER          200.0
-#define AROMA_ENEMY_HILL        200.0
-#define AROMA_MYSTERY           50.0
-#define AROMA_CONFLICT_FRONT    40.0
-#define AROMA_CONFLICT_SIDE     20.0
-#define AROMA_CONFLICT_REAR     10.0
+#define AROMA_ENEMY_HILL        500.0
+#define AROMA_MYSTERY           100.0
+#define AROMA_CONFLICT          40.0
+#define AROMA_CONFLICT_FRONT    80.0
+#define AROMA_CONFLICT_SIDE     0.0 //20.0
+#define AROMA_CONFLICT_REAR     0.0 //10.0
 
 void aroma_reset() {
     int row, col;
@@ -37,6 +38,14 @@ void aroma_iterate() {
 
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
+            if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
+                aroma[row][col] = 0.0;
+            }
+        }
+    }
+
+    for (row = 0; row < rows; row++) {
+        for (col = 0; col < cols; col++) {
             sum = 0;
             count = 0;
             square = map[row][col];
@@ -46,6 +55,7 @@ void aroma_iterate() {
 
                 for (direction = 0; direction < 4; direction++) {
                     neighbor(row, col, direction, &row2, &col2);
+                    if (row == row2 && col == col2) continue;
                     square2 = map[row2][col2];
                     if (!(square2 & SQUARE_WATER)) {
                         sum += aroma[row2][col2];
@@ -86,10 +96,10 @@ void aroma_iterate() {
                         aroma[row][col] += AROMA_INTRUDER;
                     }
                 } else {
-                    aroma[row][col] = 0.0;
                     for (direction = 0; direction < 4; direction++) {
                         neighbor(row, col, direction, &row2, &col2);
-                        if (threat[row][col] == 0 && threat[row2][col2] > 0) {
+                        if (conflict[row][col] == 0 && conflict[row2][col2] > 0) {
+                            aroma[row][col] += AROMA_CONFLICT;
                             aroma[row2][col2] += AROMA_CONFLICT_FRONT;
                             neighbor(row, col, (direction + 1) % 4, &row2, &col2);
                             aroma[row2][col2] += AROMA_CONFLICT_SIDE;
@@ -226,15 +236,16 @@ int main(int argc, char *argv[]) {
     assert(aroma[0][0] == AROMA_FOOD);
     assert(aroma[0][1] == AROMA_ENEMY_HILL);
 
-    map_load_from_string("0......bb...................");
+    map_load_from_string("0.........bb............................");
     holy_ground_calculate();
     threat_calculate();
     mystery_reset();
     aroma_reset();
     aroma_iterate();
-    assert(aroma[0][6] == 0.0);
-    assert(aroma[0][7] == AROMA_INTRUDER);
-    assert(aroma[0][8] == 0.0);
+    assert(HOLY_GROUND_RANGE == 10);
+    assert(aroma[0][9] == 0.0);
+    assert(aroma[0][10] == AROMA_INTRUDER);
+    assert(aroma[0][11] == 0.0);
 
     map_load_from_string("?.");
     holy_ground_calculate();
@@ -265,7 +276,7 @@ int main(int argc, char *argv[]) {
     mystery_reset();
     aroma_reset();
     aroma_iterate();
-    assert(aroma[4][2] == 0.0);
+    assert(aroma[4][2] == AROMA_CONFLICT);
     assert(aroma[4][3] == AROMA_CONFLICT_FRONT);
     assert(aroma[5][2] == AROMA_CONFLICT_SIDE);
     assert(aroma[3][2] == AROMA_CONFLICT_SIDE);
