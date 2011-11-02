@@ -50,7 +50,7 @@ void holy_ground_calculate() {
             }
         }
 
-        assert(sizeof(holy_ground) == sizeof(holy_ground));
+        assert(sizeof(holy_ground) == sizeof(holy_ground2));
         memcpy(holy_ground, holy_ground2, sizeof(holy_ground));
     }
 }

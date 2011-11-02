@@ -6,15 +6,16 @@
 #include "mystery.h"
 #include "aroma.h"
 
-#define AROMA_DISSIPATION 0.8
+#define AROMA_DISSIPATION 0.95
 
 #define AROMA_FOOD              100.0
+#define AROMA_ENEMY             10.0
 #define AROMA_INTRUDER          200.0
 #define AROMA_ENEMY_HILL        500.0
-#define AROMA_MYSTERY           100.0
-#define AROMA_CONFLICT          40.0
+#define AROMA_MYSTERY           10.0
+#define AROMA_CONFLICT          0.0
 #define AROMA_CONFLICT_FRONT    80.0
-#define AROMA_CONFLICT_SIDE     0.0 //20.0
+#define AROMA_CONFLICT_SIDE     0.0
 #define AROMA_CONFLICT_REAR     0.0 //10.0
 
 void aroma_reset() {
@@ -39,7 +40,7 @@ void aroma_iterate() {
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
             if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
-                aroma[row][col] = 0.0;
+                aroma[row][col] *= 0.2;
             }
         }
     }
@@ -94,21 +95,23 @@ void aroma_iterate() {
                 if (owner[row][col]) {
                     if (holy_ground[row][col]) {
                         aroma[row][col] += AROMA_INTRUDER;
+                    } else {
+                        aroma[row][col] += AROMA_ENEMY;
                     }
                 } else {
-                    for (direction = 0; direction < 4; direction++) {
-                        neighbor(row, col, direction, &row2, &col2);
-                        if (conflict[row][col] == 0 && conflict[row2][col2] > 0) {
-                            aroma[row][col] += AROMA_CONFLICT;
-                            aroma[row2][col2] += AROMA_CONFLICT_FRONT;
-                            neighbor(row, col, (direction + 1) % 4, &row2, &col2);
-                            aroma[row2][col2] += AROMA_CONFLICT_SIDE;
-                            neighbor(row, col, (direction + 2) % 4, &row2, &col2);
-                            aroma[row2][col2] += AROMA_CONFLICT_REAR;
-                            neighbor(row, col, (direction + 3) % 4, &row2, &col2);
-                            aroma[row2][col2] += AROMA_CONFLICT_SIDE;
-                        }
-                    }
+                    // for (direction = 0; direction < 4; direction++) {
+                    //     neighbor(row, col, direction, &row2, &col2);
+                    //     if (enemy_could_attack[row][col] == 0 && enemy_could_attack[row2][col2] > 0) {
+                    //         aroma[row][col] += AROMA_CONFLICT;
+                    //         aroma[row2][col2] += AROMA_CONFLICT_FRONT;
+                    //         neighbor(row, col, (direction + 1) % 4, &row2, &col2);
+                    //         aroma[row2][col2] += AROMA_CONFLICT_SIDE;
+                    //         neighbor(row, col, (direction + 2) % 4, &row2, &col2);
+                    //         aroma[row2][col2] += AROMA_CONFLICT_REAR;
+                    //         neighbor(row, col, (direction + 3) % 4, &row2, &col2);
+                    //         aroma[row2][col2] += AROMA_CONFLICT_SIDE;
+                    //     }
+                    // }
                 }
             }
         }

@@ -1,0 +1,391 @@
+#include <assert.h>
+#include <string.h>
+#include "map.h"
+#include "holy_ground.h"
+#include "threat.h"
+#include "aroma.h"
+#include "directions.h"
+
+char direction_symbols[] = {'N', 'E', 'S', 'W'};
+
+struct square_t {
+    int row;
+    int col;
+    struct square_t *next, *previous;
+    struct square_t *north, *east, *south, *west;
+    char contents;
+    char owner;
+    char direction;
+    float aroma;
+};
+
+struct square_t squares[MAX_ROWS][MAX_COLS];
+
+float directions_score() {
+    int row, col;
+    struct square_t *square;
+    float score = 0;
+    for (row = 0; row < rows; row++) {
+        for (col = 0; col < cols; col++) {
+            square = &squares[row][col];
+            switch (square->direction) {
+                case 'N':
+                    score += square->north->aroma;
+                    break;
+                case 'E':
+                    score += square->east->aroma;
+                    break;
+                case 'S':
+                    score += square->south->aroma;
+                    break;
+                case 'W':
+                    score += square->west->aroma;
+                    break;
+                case 'X':
+                    score += square->aroma;
+                    break;
+            }
+        }
+    }
+    return score;
+}
+
+void directions_save() {
+    int row, col;
+    struct square_t *square;
+    for (row = 0; row < rows; row++) {
+        for (col = 0; col < cols; col++) {
+            square = &squares[row][col];
+            directions[row][col] = square->direction;
+        }
+    }
+}
+
+void directions_calculate() {
+    int row, col;
+    int row2, col2;
+    int forward, backward;
+    struct square_t *square;
+    float score, max_score;
+
+    struct square_t *first_square = NULL;
+    struct square_t *last_square = NULL;
+
+    for (row = 0; row < rows; row++) {
+        for (col = 0; col < cols; col++) {
+            square = &squares[row][col];
+            square->row = row;
+            square->col = col;
+
+            neighbor(row, col, NORTH, &row2, &col2);
+            square->north = &squares[row2][col2];
+            neighbor(row, col, EAST, &row2, &col2);
+            square->east = &squares[row2][col2];
+            neighbor(row, col, SOUTH, &row2, &col2);
+            square->south = &squares[row2][col2];
+            neighbor(row, col, WEST, &row2, &col2);
+            square->west = &squares[row2][col2];
+
+            square->contents = map[row][col];
+            square->owner = owner[row][col];
+            square->aroma = aroma[row][col];
+
+            if (square->contents & SQUARE_WATER) {
+                square->direction = '%';
+            } else if (square->contents & SQUARE_LAND) {
+                if (square->contents & SQUARE_FOOD) {
+                    square->direction = '*';
+                } else if ((square->contents & SQUARE_ANT) && (square->owner == 0)) {
+                    square->direction = '-';
+                    square->previous = last_square;
+                    last_square = square;
+                } else {
+                    square->direction = '.';
+                }
+            } else {
+                square->direction = '?';
+            }
+        }
+    }
+
+    square = last_square;
+    while (square) {
+        square->next = first_square;
+        first_square = square;
+        square = square->previous;
+    }
+
+    forward = 1;
+    backward = 0;
+    row = 0;
+    col = 0;
+    max_score = 0.0;
+
+    square = first_square;
+
+    printf("first %li, last %li\n", (long int) first_square, (long int) last_square);
+
+    int i = 0;
+    while (square) {
+        printf("%i iterations\n", ++i);
+        // square = &squares[row][col];
+
+        // printf("%i:%i = \n", row, col, square->direction);
+
+        switch (square->direction) {
+            case '-':
+                if (square->north->contents & SQUARE_LAND
+                    && square->north->direction != 'X'
+                    && square->north->north->direction != 'S'
+                    && square->north->east->direction != 'W'
+                    && square->north->west->direction != 'E'
+                ) {
+                    square->direction = 'N';
+                    forward = 1;
+                    backward = 0;
+                    break;
+                }
+            case 'N':
+                if (square->east->contents & SQUARE_LAND
+                    && square->east->direction != 'X'
+                    && square->east->north->direction != 'S'
+                    && square->east->east->direction != 'W'
+                    && square->east->south->direction != 'N'
+                ) {
+                    square->direction = 'E';
+                    forward = 1;
+                    backward = 0;
+                    break;
+                }
+            case 'E':
+                if (square->south->contents & SQUARE_LAND
+                    && square->south->direction != 'X'
+                    && square->south->east->direction != 'W'
+                    && square->south->south->direction != 'N'
+                    && square->south->west->direction != 'E'
+                ) {
+                    square->direction = 'S';
+                    forward = 1;
+                    backward = 0;
+                    break;
+                }
+            case 'S':
+                if (square->west->contents & SQUARE_LAND
+                    && square->west->direction != 'X'
+                    && square->west->north->direction != 'S'
+                    && square->west->south->direction != 'N'
+                    && square->west->west->direction != 'E'
+                ) {
+                    square->direction = 'W';
+                    forward = 1;
+                    backward = 0;
+                    break;
+                }
+            case 'W':
+                if (square->north->direction != 'S'
+                    && square->east->direction != 'W'
+                    && square->south->direction != 'N'
+                    && square->west->direction != 'E'
+                ) {
+                    square->direction = 'X';
+                    forward = 1;
+                    backward = 0;
+                    break;
+                }
+            case 'X':
+                square->direction = '-';
+                forward = 0;
+                backward = 1;
+                break;
+        }
+
+        if (forward) {
+            printf("forward\n");
+            if (square->next) {
+                printf("next\n");
+                square = square->next;
+            } else {
+                score = directions_score();
+                printf("score %f\n", score);
+                if (max_score < score) {
+                    max_score = score;
+                    directions_save();
+                }
+
+                forward = 0;
+                backward = 0;
+            }
+        }
+
+        if (backward) {
+            printf("backward\n");
+            if (square->previous) {
+                printf("previous\n");
+                square = square->previous;
+            } else {
+                printf("done\n");
+                break;
+            }
+        }
+    }
+}
+
+// void directions_calculate() {
+//     int row, col;
+//     char c;
+//     int row2, col2;
+//     int direction;
+//     float max_aroma;
+//     float min_threat;
+//     for (row = 0; row < rows; row++) {
+//         for (col = 0; col < cols; col++) {
+//             if (map[row][col] & SQUARE_LAND) {
+//                 if (map[row][col] & SQUARE_FOOD) {
+//                     c = '*';
+//                 } else if (enemy_can_attack[row][col]) {
+//                     c = '!';
+//                 } else {
+//                     c = '+';
+// 
+//                     min_threat = threat[row][col];
+//                     max_aroma = aroma[row][col];
+// 
+//                     for (direction = 0; direction < 4; direction++) {
+//                         neighbor(row, col, direction, &row2, &col2);
+// 
+//                         if (map[row2][col2] & SQUARE_FOOD) {
+//                             c = '+';
+//                             break;
+//                         }
+// 
+//                         if ((min_threat > threat[row2][col2]) || ((min_threat == threat[row2][col2]) && (max_aroma < aroma[row2][col2]))) {
+//                             min_threat = threat[row2][col2];
+//                             max_aroma = aroma[row2][col2];
+//                             c = direction_symbols[direction];
+//                         }
+//                     }
+//                 }
+//             } else if (map[row][col] & SQUARE_WATER) {
+//                 c = '-';
+//             } else {
+//                 c = '?';
+//             }
+// 
+//             directions[row][col] = c;
+//         }
+//     }
+// }
+
+char *directions_to_string() {
+    static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
+    char *output = buffer;
+    int row, col;
+
+    for (row = 0; row < rows; row++) {
+        for (col = 0; col < cols; col++) {
+            // *output++ = squares[row][col].direction;
+            *output++ = directions[row][col];
+        }
+        *output++ = '\n';
+    }
+    *--output = '\0';
+    return buffer;
+}
+
+#ifdef UNIT_TESTS
+#undef UNIT_TESTS
+#include "globals.c"
+#include "map.c"
+#include "holy_ground.c"
+#include "threat.c"
+#include "mystery.c"
+#include "aroma.c"
+int main(int argc, char *argv[]) {
+    // char *expected;
+    attackradius2 = 5;
+    viewradius2 = 55;
+    // puts(aroma_to_string());
+    // printf("%i %i %i %i\n", map[0][0], map[0][1], map[0][2], map[0][3]);
+
+    map_load_from_string("a.*%");
+    holy_ground_calculate();
+    threat_calculate();
+    mystery_reset();
+    aroma_stabilize();
+    // puts(aroma_to_string());
+    directions_calculate();
+    puts(directions_to_string());
+    assert(directions[0][0] == 'E');
+
+    map_load_from_string("a%...%*%\n"
+                         "...%...%\n"
+                         "%%%%%%%%");
+    puts(map_to_string());
+    holy_ground_calculate();
+    threat_calculate();
+    mystery_reset();
+    aroma_stabilize();
+
+    puts(aroma_to_string());
+    directions_calculate();
+    puts(directions_to_string());
+    
+    assert(directions[0][0] == 'S');
+
+    // map_load_from_string(".........%\n"
+    //                      ".........%\n"
+    //                      ".........%\n"
+    //                      ".........%\n"
+    //                      "....b....%\n"
+    //                      ".........%\n"
+    //                      ".........%\n"
+    //                      ".........%\n"
+    //                      "........*%\n"
+    //                      "%%%%%%%%%%");
+    // expected = "EEEEEESSS-\n"
+    //            "SE+NNEESS-\n"
+    //            "S+N!!!EES-\n"
+    //            "SW!!!!!ES-\n"
+    //            "SW!!!!!ES-\n"
+    //            "SS!!!!!SS-\n"
+    //            "ESS!!!ESS-\n"
+    //            "EESSSEEE+-\n"
+    //            "EEEEEEE+*-\n"
+    //            "----------";
+    // holy_ground_calculate();
+    // threat_calculate();
+    // mystery_reset();
+    // aroma_stabilize();
+    // directions_calculate();
+    // // puts(directions_to_string());
+    // assert(strcmp(directions_to_string(), expected) == 0);
+    
+    map_load_from_string(".aa...b.....*......................\n"
+                         ".aa.........*......................");
+    puts(map_to_string());
+    holy_ground_calculate();
+    threat_calculate();
+    mystery_reset();
+    aroma_stabilize();
+    puts(aroma_to_string());
+    directions_calculate();
+    puts(directions_to_string());
+    
+    map_load_from_string("..a...b.....*......................\n"
+                         "......b.....*......................");
+    puts(map_to_string());
+    holy_ground_calculate();
+    threat_calculate();
+    mystery_reset();
+    aroma_stabilize();
+    puts(aroma_to_string());
+    directions_calculate();
+    puts(directions_to_string());
+
+
+    // aroma_iterate();
+
+    puts("ok");
+    return 0;
+}
+#endif

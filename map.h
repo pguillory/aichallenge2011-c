@@ -7,8 +7,9 @@
 #define SQUARE_LAND        2
 #define SQUARE_WATER       4
 #define SQUARE_FOOD        8
-#define SQUARE_ANT         16
-#define SQUARE_HILL        32
+#define SQUARE_ANT        16
+#define SQUARE_HILL       32
+#define SQUARE_ARMY       64
 
 unsigned char map[MAX_ROWS][MAX_COLS];
 unsigned char update[MAX_ROWS][MAX_COLS];

@@ -8,8 +8,9 @@ void threat_calculate() {
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
             threat[row][col] = 0;
-            conflict[row][col] = 0;
-            killzone[row][col] = 0;
+            enemy_can_attack[row][col] = 0;
+            // enemy_could_occupy[row][col] = 1;
+            enemy_could_attack[row][col] = 0;
         }
     }
 
@@ -23,20 +24,25 @@ void threat_calculate() {
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
             if ((map[row][col] & SQUARE_ANT) && owner[row][col]) {
+                // enemy_could_occupy[row][col] = 1;
+
                 for (dr = -attackradius, rows_scanned = 0; dr <= attackradius && rows_scanned < rows; dr++, rows_scanned++) {
                     row2 = normalize_row(row + dr);
                     for (dc = -attackradius, cols_scanned = 0; dc <= attackradius && cols_scanned < cols; dc++, cols_scanned++) {
                         col2 = normalize_col(col + dc);
+
                         if (distance2(row, col, row2, col2) <= attackradius2) {
-                            killzone[row2][col2] = 1;
+                            enemy_can_attack[row2][col2] = 1;
+                            enemy_could_attack[row2][col2] = 1;
                         }
 
                         for (direction = 0; direction < 4; direction++) {
                             neighbor(row, col, direction , &rowp, &colp);
+                            // enemy_could_occupy[rowp][colp] = 1;
                             if (map[rowp][colp] & SQUARE_LAND) {
                                 if (distance2(rowp, colp, row2, col2) <= attackradius2) {
                                     threat[row2][col2] += 1;
-                                    conflict[row2][col2] = 1;
+                                    enemy_could_attack[row2][col2] = 1;
                                     break;
                                 }
                             }
@@ -49,22 +55,61 @@ void threat_calculate() {
 
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
-            if (threat[row][col] > 0) {
-                threat[row][col] += (holy_ground[row][col] ? 0 : 1);
+            if ((threat[row][col] > 0) && (holy_ground[row][col] == 0)) {
+                threat[row][col] += 1;
             }
         }
     }
-    
+
+    // for (row = 0; row < rows; row++) {
+    //     for (col = 0; col < cols; col++) {
+    //         if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
+    //             for (dr = -attackradius, rows_scanned = 0; dr <= attackradius && rows_scanned < rows; dr++, rows_scanned++) {
+    //                 row2 = normalize_row(row + dr);
+    //                 for (dc = -attackradius, cols_scanned = 0; dc <= attackradius && cols_scanned < cols; dc++, cols_scanned++) {
+    //                     col2 = normalize_col(col + dc);
+    // 
+    //                     for (direction = 0; direction < 4; direction++) {
+    //                         neighbor(row, col, direction , &rowp, &colp);
+    //                         if (map[rowp][colp] & SQUARE_LAND) {
+    //                             if (distance2(rowp, colp, row2, col2) <= attackradius2) {
+    //                                 if (threat[row2][col2] > 0) {
+    //                                     threat[row2][col2] -= 1;
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+    // for (row = 0; row < rows; row++) {
+    //     for (col = 0; col < cols; col++) {
+    //         if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
+    //             for (dr = -attackradius, rows_scanned = 0; dr <= attackradius && rows_scanned < rows; dr++, rows_scanned++) {
+    //                 row2 = normalize_row(row + dr);
+    //                 for (dc = -attackradius, cols_scanned = 0; dc <= attackradius && cols_scanned < cols; dc++, cols_scanned++) {
+    //                     col2 = normalize_col(col + dc);
+    // 
+    //                     if (threat[row2][col2] > 0) {
+    //                         threat[row2][col2] -= 1;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
             if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
-                // printf("friendly ant at %i:%i\n", row, col);
                 for (dr = -1, rows_scanned = 0; dr <= +1 && rows_scanned < rows; dr++, rows_scanned++) {
                     row2 = normalize_row(row + dr);
                     for (dc = -1, cols_scanned = 0; dc <= +1 && cols_scanned < cols; dc++, cols_scanned++) {
                         col2 = normalize_col(col + dc);
                         if (threat[row2][col2] > 0) {
-                            // printf("reducing threat at %i:%i\n", row2, col2);
                             threat[row2][col2] -= 1;
                         }
                     }
@@ -105,10 +150,10 @@ int main(int argc, char *argv[]) {
     viewradius2 = 55;
 
     map_string = "...b....";
-    threat_string = "24555420";
+    threat_string = "22222220";
     map_load_from_string(map_string);
     threat_calculate();
-    puts(threat_to_string());
+    // puts(threat_to_string());
     assert(strcmp(threat_to_string(), threat_string) == 0);
 
     map_string = "........\n"
@@ -130,7 +175,7 @@ int main(int argc, char *argv[]) {
                     "00000000";
     map_load_from_string(map_string);
     threat_calculate();
-    // puts(threat_to_string());
+    puts(threat_to_string());
     assert(strcmp(threat_to_string(), threat_string) == 0);
 
     map_string = "........\n"
@@ -207,11 +252,11 @@ int main(int argc, char *argv[]) {
                  ".........\n"
                  ".........";
     threat_string = "000222000\n"
-                    "003343300\n"
-                    "013555320\n"
-                    "014555420\n"
-                    "013555320\n"
-                    "003343300\n"
+                    "001343300\n"
+                    "001455200\n"
+                    "001455300\n"
+                    "001455200\n"
+                    "001343300\n"
                     "000222000\n"
                     "000000000";
     map_load_from_string(map_string);
@@ -237,7 +282,7 @@ int main(int argc, char *argv[]) {
                     "000000000";
     map_load_from_string(map_string);
     threat_calculate();
-    // puts(threat_to_string());
+    puts(threat_to_string());
     assert(strcmp(threat_to_string(), threat_string) == 0);
 
     map_string = ".........\n"
