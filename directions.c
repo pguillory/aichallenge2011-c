@@ -2,6 +2,7 @@
 #include <string.h>
 #include "map.h"
 #include "holy_ground.h"
+#include "army.h"
 #include "threat.h"
 #include "aroma.h"
 #include "directions.h"
@@ -51,7 +52,11 @@ float move_value(row, col, move) {
             assert(0);
     }
 
-    return (aroma[row2][col2] - threat[row2][col2] * 1000.0) - (aroma[row][col] - threat[row][col] * 1000.0);
+    if (army[row][col]) {
+        return (army_aroma[row2][col2] - threat[row2][col2] * 1000.0) - (army_aroma[row][col] - threat[row][col] * 1000.0);
+    } else {
+        return (aroma[row2][col2] - threat[row2][col2] * 1000.0) - (aroma[row][col] - threat[row][col] * 1000.0);
+    }
 
     // return aroma[row2][col2] - aroma[row][col];
 }
@@ -529,7 +534,7 @@ int main(int argc, char *argv[]) {
     threat_calculate();
     mystery_reset();
     aroma_stabilize();
-    // puts(aroma_to_string());
+    puts(aroma_to_string());
     directions_calculate();
     puts(directions_to_string());
     assert(directions[0][0] == 'E');

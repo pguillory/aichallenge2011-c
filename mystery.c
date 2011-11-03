@@ -1,4 +1,5 @@
 #include "map.h"
+#include "holy_ground.h"
 #include "mystery.h"
 
 void mystery_reset() {
@@ -21,7 +22,7 @@ void mystery_iterate() {
             if (map[row][col] & SQUARE_VISIBLE) {
                 mystery[row][col] = 0;
             } else {
-                if (mystery[row][col] < MYSTERY_MAX) {
+                if ((holy_ground[row][col] == 0) && (mystery[row][col] < MYSTERY_MAX)) {
                     mystery[row][col] += 1;
                 }
             }

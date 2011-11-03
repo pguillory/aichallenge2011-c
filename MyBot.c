@@ -6,6 +6,7 @@
 #include "globals.h"
 #include "map.h"
 #include "holy_ground.h"
+#include "army.h"
 #include "threat.h"
 #include "mystery.h"
 #include "aroma.h"
@@ -57,6 +58,7 @@ void read_command(char *command) {
                 turn_start = now();
                 map_finish_update();
                 holy_ground_calculate();
+                army_calculate();
                 threat_calculate();
                 mystery_iterate();
                 aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
