@@ -10,23 +10,23 @@ void support_calculate() {
 
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
-            support[row][col] = 0;
+            support[p.row][p.col] = 0;
         }
     }
 
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
-            if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
+            if (friendly_ant_exists_at(p)) {
                 for (dr = -1; dr <= +1; dr++) {
                     row2 = normalize_row(row + dr);
                     for (dc = -1; dc <= +1; dc++) {
                         col2 = normalize_col(col + dc);
-                        support[row2][col2] += 1;
+                        support[p2.row][p2.col] += 1;
                     }
                 }
                 // for (direction = 0; direction < 4; direction++) {
                 //     neighbor(row, col, direction , &row2, &col2);
-                //     support[row2][col2] += 1;
+                //     support[p2.row][p2.col] += 1;
                 // }
             }
         }
@@ -40,7 +40,7 @@ char *support_to_string() {
 
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
-            *output++ = '0' + support[row][col];
+            *output++ = '0' + support[p.row][p.col];
         }
         *output++ = '\n';
     }

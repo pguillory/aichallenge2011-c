@@ -11,81 +11,25 @@ void bot_init() {
 }
 
 void bot_issue_orders() {
-    int row, col;
+    point p;
     // int row2, col2;
     char direction;
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
-                direction = directions[row][col];
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            if (friendly_ant_exists_at(p)) {
+                direction = directions[p.row][p.col];
                 switch (direction) {
                     case 'N':
                     case 'S':
                     case 'E':
                     case 'W':
-                        server_order(row, col, direction);
+                        server_order(p, direction);
                         break;
                 }
             }
         }
     }
-
-    // static char available[MAX_ROWS][MAX_COLS];
-    // 
-    // for (row = 0; row < rows; row++) {
-    //     for (col = 0; col < cols; col++) {
-    //         available[row][col] = !(map[row][col] & SQUARE_ANT);
-    //     }
-    // }
-    // 
-    // for (row = 0; row < rows; row++) {
-    //     for (col = 0; col < cols; col++) {
-    //         if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
-    //             direction = directions[row][col];
-    //             switch (direction) {
-    //                 case 'N':
-    //                     neighbor(row, col, NORTH, &row2, &col2);
-    //                     if (available[row2][col2]) {
-    //                         available[row][col] = 1;
-    //                         available[row2][col2] = 0;
-    //                         server_order(row, col, direction);
-    //                     }
-    //                     break;
-    //                 case 'S':
-    //                     neighbor(row, col, SOUTH, &row2, &col2);
-    //                     if (available[row2][col2]) {
-    //                         available[row][col] = 1;
-    //                         available[row2][col2] = 0;
-    //                         server_order(row, col, direction);
-    //                     }
-    //                     break;
-    //                 case 'E':
-    //                     neighbor(row, col, EAST, &row2, &col2);
-    //                     if (available[row2][col2]) {
-    //                         available[row][col] = 1;
-    //                         available[row2][col2] = 0;
-    //                         server_order(row, col, direction);
-    //                     }
-    //                     break;
-    //                 case 'W':
-    //                     neighbor(row, col, WEST, &row2, &col2);
-    //                     if (available[row2][col2]) {
-    //                         available[row][col] = 1;
-    //                         available[row2][col2] = 0;
-    //                         server_order(row, col, direction);
-    //                     }
-    //                     break;
-    //                 default:
-    //                     // available[row][col] = 0;
-    //                     break;
-    //             }
-    //             // if (c == 'N' || c == 'S' || c == 'E' || c == 'W') {
-    //             //     server_order(row, col, c);
-    //             // }
-    //         }
-    //     }
-    // }
 }
 
 #ifdef UNIT_TESTS

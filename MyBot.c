@@ -6,10 +6,10 @@
 #include "globals.h"
 #include "map.h"
 #include "holy_ground.h"
-#include "army.h"
 #include "threat.h"
 #include "mystery.h"
 #include "aroma.h"
+#include "army.h"
 #include "directions.h"
 #include "bot.h"
 #include "server.h"
@@ -29,7 +29,7 @@ void dump_state() {
     // logs(directions_to_string());
 }
 
-long int turn_start, turn_end;
+long int start_time, end_time;
 long int now() {
     return clock() / (CLOCKS_PER_SEC / 1000);
 }
@@ -37,42 +37,56 @@ long int now() {
 void read_command(char *command) {
     char *words[256];
     int word_count = 0;
-    char *p = command;
+    char *read_head = command;
     int looking_for_word = 1;
-    while (*p) {
-        if (*p == ' ') {
+    while (*read_head) {
+        if (*read_head == ' ') {
             looking_for_word = 1;
-            *p = '\0';
+            *read_head = '\0';
         } else if (looking_for_word) {
             looking_for_word = 0;
-            words[word_count++] = p;
+            words[word_count++] = read_head;
         }
-        p++;
+        read_head++;
     }
 
-    int row, col, player;
+    point p;
+    int player;
     switch (word_count) {
         case 1:
             if (0 == strcmp(words[0], "go")) {
                 fprintf(logfile, "end turn %i\n", turn);
-                turn_start = now();
+                start_time = now();
                 map_finish_update();
+                fprintf(logfile, "map_finish_update(): %li ms elapsed\n", now() - start_time);
+                start_time = now();
                 holy_ground_calculate();
-                army_calculate();
+                fprintf(logfile, "holy_ground_calculate(): %li ms elapsed\n", now() - start_time);
+                start_time = now();
                 threat_calculate();
+                fprintf(logfile, "threat_calculate(): %li ms elapsed\n", now() - start_time);
+                start_time = now();
                 mystery_iterate();
+                fprintf(logfile, "mystery_iterate(): %li ms elapsed\n", now() - start_time);
+                start_time = now();
                 aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
                 aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
+                // aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
+                // aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
+                // aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
+                // aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
+                fprintf(logfile, "aroma_iterate(): %li ms elapsed\n", now() - start_time);
+                start_time = now();
+                army_calculate();
+                fprintf(logfile, "army_calculate(): %li ms elapsed\n", now() - start_time);
+                start_time = now();
                 directions_calculate();
-                dump_state();
+                fprintf(logfile, "directions_calculate(): %li ms elapsed\n", now() - start_time);
+                start_time = now();
+                // dump_state();
                 bot_issue_orders();
+                fprintf(logfile, "bot_issue_orders(): %li ms elapsed\n", now() - start_time);
                 server_go();
-                turn_end = now();
-                fprintf(logfile, "%li ms elapsed\n", turn_end - turn_start);
             } else if (0 == strcmp(words[0], "ready")) {
                 bot_init();
                 server_go();
@@ -112,29 +126,29 @@ void read_command(char *command) {
 
         case 3:
             if (0 == strcmp(words[0], "w")) {
-                row = atoi(words[1]);
-                col = atoi(words[2]);
-                update[row][col] |= SQUARE_WATER;
+                p.row = atoi(words[1]);
+                p.col = atoi(words[2]);
+                update[p.row][p.col] |= SQUARE_WATER;
             } else if (0 == strcmp(words[0], "f")) {
-                row = atoi(words[1]);
-                col = atoi(words[2]);
-                update[row][col] |= SQUARE_FOOD;
+                p.row = atoi(words[1]);
+                p.col = atoi(words[2]);
+                update[p.row][p.col] |= SQUARE_FOOD;
             }
             break;
 
         case 4:
             if (0 == strcmp(words[0], "h")) {
-                row = atoi(words[1]);
-                col = atoi(words[2]);
+                p.row = atoi(words[1]);
+                p.col = atoi(words[2]);
                 player = atoi(words[3]);
-                update[row][col] |= SQUARE_HILL;
-                owner[row][col] = player;
+                update[p.row][p.col] |= SQUARE_HILL;
+                owner[p.row][p.col] = player;
             } else if (0 == strcmp(words[0], "a")) {
-                row = atoi(words[1]);
-                col = atoi(words[2]);
+                p.row = atoi(words[1]);
+                p.col = atoi(words[2]);
                 player = atoi(words[3]);
-                update[row][col] |= SQUARE_ANT;
-                owner[row][col] = player;
+                update[p.row][p.col] |= SQUARE_ANT;
+                owner[p.row][p.col] = player;
             } else if (0 == strcmp(words[0], "d")) {
                 // dead ant
             }

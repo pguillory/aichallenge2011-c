@@ -1,14 +1,15 @@
 #include <assert.h>
 #include <stdio.h>
 // #include <string.h>
+#include "globals.h"
 
 void server_go() {
     puts("go");
     fflush(stdout);
 }
 
-void server_order(int row, int col, char direction) {
-    printf("o %i %i %c\n", row, col, direction);
+void server_order(point p, char direction) {
+    printf("o %i %i %c\n", p.row, p.col, direction);
 }
 
 #ifdef UNIT_TESTS

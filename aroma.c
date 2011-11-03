@@ -7,7 +7,7 @@
 #include "aroma.h"
 
 #define AROMA_NATURAL_DISSIPATION  0.95
-#define AROMA_ANT_DISSIPATION      0.2
+#define AROMA_ANT_DISSIPATION      0.0
 #define AROMA_ARMY_ANT_DISSIPATION 0.9
 
 #define AROMA_FOOD               100.0
@@ -21,47 +21,36 @@
 #define AROMA_CONFLICT_REAR        0.0
 
 void aroma_reset() {
-    int row, col;
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            aroma[row][col] = 0.0;
+    point p;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            aroma[p.row][p.col] = 0.0;
         }
     }
 }
 
 void aroma_spread(float aroma[MAX_ROWS][MAX_COLS]) {
-    int row, col;
-    int row2, col2;
-    char square;
-    char square2;
+    point p, p2;
     int direction;
     float sum;
     int count;
     float aroma2[MAX_ROWS][MAX_COLS];
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            sum = 0;
-            count = 0;
-            square = map[row][col];
-            if (!(square & SQUARE_WATER)) {
-                sum += aroma[row][col];
-                count += 1;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            if (!(map[p.row][p.col] & SQUARE_WATER)) {
+                sum = aroma[p.row][p.col];
+                count = 1;
 
                 for (direction = 0; direction < 4; direction++) {
-                    neighbor(row, col, direction, &row2, &col2);
-                    if (row == row2 && col == col2) continue;
-                    square2 = map[row2][col2];
-                    if (!(square2 & SQUARE_WATER)) {
-                        sum += aroma[row2][col2];
+                    p2 = neighbor(p, direction);
+                    if (points_equal(p, p2)) continue;
+                    if (!(map[p2.row][p2.col] & SQUARE_WATER)) {
+                        sum += aroma[p2.row][p2.col];
                         count += 1;
                     }
                 }
-            }
-            if (count) {
-                aroma2[row][col] = sum / count;
-            } else {
-                aroma2[row][col] = 0.0;
+                aroma2[p.row][p.col] = sum / count;
             }
         }
     }
@@ -72,19 +61,18 @@ void aroma_spread(float aroma[MAX_ROWS][MAX_COLS]) {
 }
 
 void aroma_iterate() {
-    int row, col;
-    int row2, col2;
+    point p, p2;
     char square;
     int direction;
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
-                aroma[row][col] *= AROMA_ANT_DISSIPATION;
-                army_aroma[row][col] *= AROMA_ARMY_ANT_DISSIPATION;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            if (friendly_ant_exists_at(p)) {
+                aroma[p.row][p.col] *= AROMA_ANT_DISSIPATION;
+                army_aroma[p.row][p.col] *= AROMA_ARMY_ANT_DISSIPATION;
             } else {
-                aroma[row][col] *= AROMA_NATURAL_DISSIPATION;
-                army_aroma[row][col] *= AROMA_NATURAL_DISSIPATION;
+                aroma[p.row][p.col] *= AROMA_NATURAL_DISSIPATION;
+                army_aroma[p.row][p.col] *= AROMA_NATURAL_DISSIPATION;
             }
         }
     }
@@ -92,44 +80,44 @@ void aroma_iterate() {
     aroma_spread(aroma);
     aroma_spread(army_aroma);
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            square = map[row][col];
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            square = map[p.row][p.col];
             if (square & SQUARE_FOOD) {
-                aroma[row][col] += AROMA_FOOD;
+                aroma[p.row][p.col] += AROMA_FOOD;
             }
             if (square & SQUARE_HILL) {
-                if (owner[row][col]) {
-                    aroma[row][col] += AROMA_ENEMY_HILL;
-                    army_aroma[row][col] += AROMA_ENEMY_HILL;
+                if (owner[p.row][p.col]) {
+                    aroma[p.row][p.col] += AROMA_ENEMY_HILL;
+                    army_aroma[p.row][p.col] += AROMA_ENEMY_HILL;
                 }
             }
-            aroma[row][col] += AROMA_MYSTERY * mystery[row][col] / MYSTERY_MAX;
+            aroma[p.row][p.col] += AROMA_MYSTERY * mystery[p.row][p.col] / MYSTERY_MAX;
             // if (!(square & (SQUARE_LAND | SQUARE_WATER))) {
-            //     aroma[row][col] += AROMA_UNDISCOVERED;
+            //     aroma[p.row][p.col] += AROMA_UNDISCOVERED;
             // }
             if (square & SQUARE_ANT) {
-                if (owner[row][col]) {
-                    if (holy_ground[row][col]) {
-                        aroma[row][col] += AROMA_INTRUDER;
-                        army_aroma[row][col] += AROMA_INTRUDER;
+                if (owner[p.row][p.col]) {
+                    if (holy_ground[p.row][p.col]) {
+                        aroma[p.row][p.col] += AROMA_INTRUDER;
+                        army_aroma[p.row][p.col] += AROMA_INTRUDER;
                     } else {
-                        // aroma[row][col] += AROMA_ENEMY;
-                        army_aroma[row][col] += AROMA_ENEMY;
+                        // aroma[p.row][p.col] += AROMA_ENEMY;
+                        army_aroma[p.row][p.col] += AROMA_ENEMY;
                     }
                 } else {
                     for (direction = 0; direction < 4; direction++) {
-                        neighbor(row, col, direction, &row2, &col2);
-                        if (enemy_could_attack[row][col] == 0 && enemy_could_attack[row2][col2] > 0) {
-                            // aroma[row][col] += AROMA_CONFLICT;
-                            // aroma[row2][col2] += AROMA_CONFLICT_FRONT;
-                            army_aroma[row2][col2] += AROMA_CONFLICT_FRONT;
+                        p2 = neighbor(p, direction);
+                        if (enemy_could_attack[p.row][p.col] < enemy_could_attack[p2.row][p2.col]) {
+                            // aroma[p.row][p.col] += AROMA_CONFLICT;
+                            // aroma[p2.row][p2.col] += AROMA_CONFLICT_FRONT;
+                            army_aroma[p2.row][p2.col] += AROMA_CONFLICT_FRONT;
                             // neighbor(row, col, (direction + 1) % 4, &row2, &col2);
-                            // aroma[row2][col2] += AROMA_CONFLICT_SIDE;
+                            // aroma[p2.row][p2.col] += AROMA_CONFLICT_SIDE;
                             // neighbor(row, col, (direction + 2) % 4, &row2, &col2);
-                            // aroma[row2][col2] += AROMA_CONFLICT_REAR;
+                            // aroma[p2.row][p2.col] += AROMA_CONFLICT_REAR;
                             // neighbor(row, col, (direction + 3) % 4, &row2, &col2);
-                            // aroma[row2][col2] += AROMA_CONFLICT_SIDE;
+                            // aroma[p2.row][p2.col] += AROMA_CONFLICT_SIDE;
                         }
                     }
                 }
@@ -141,7 +129,7 @@ void aroma_iterate() {
 void aroma_stabilize() {
     aroma_reset();
     int i;
-    for (i = 0; i < 20; i++) {
+    for (i = 0; i < 100; i++) {
         aroma_iterate();
     }
 }
@@ -149,13 +137,13 @@ void aroma_stabilize() {
 char *aroma_to_string() {
     static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
     char *output = buffer;
-    int row, col;
+    point p;
     char c;
     float v;
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            v = aroma[row][col];
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            v = aroma[p.row][p.col];
             if (v <= 0) c = '-';
             else if (v < 1) c = '0';
             else if (v < 2) c = '1';
@@ -187,13 +175,13 @@ char *aroma_to_string() {
 char *army_aroma_to_string() {
     static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
     char *output = buffer;
-    int row, col;
+    point p;
     char c;
     float v;
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            v = army_aroma[row][col];
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            v = army_aroma[p.row][p.col];
             if (v <= 0) c = '-';
             else if (v < 1) c = '0';
             else if (v < 2) c = '1';
@@ -310,11 +298,11 @@ int main(int argc, char *argv[]) {
     // printf("%f %f %f %f\n", aroma[0][11], aroma[0][12], aroma[0][13], aroma[0][14]);
     assert(aroma[0][11] == 0.0);
     assert(aroma[0][12] == AROMA_INTRUDER);
-    assert(aroma[0][13] == AROMA_ENEMY);
+    // assert(aroma[0][13] == AROMA_ENEMY);
     assert(aroma[0][14] == 0.0);
     assert(army_aroma[0][11] == 0.0);
     assert(army_aroma[0][12] == AROMA_INTRUDER);
-    assert(army_aroma[0][13] == AROMA_ENEMY);
+    // assert(army_aroma[0][13] == AROMA_ENEMY);
     assert(army_aroma[0][14] == 0.0);
 
     map_load_from_string("?.");
@@ -351,10 +339,10 @@ int main(int argc, char *argv[]) {
     // puts(aroma_to_string());
     // printf("%f %f %f %f %f\n", aroma[4][2], aroma[4][3], aroma[5][2], aroma[3][2], aroma[4][1]);
     assert(aroma[4][2] == AROMA_CONFLICT);
-    assert(aroma[4][3] == AROMA_CONFLICT_FRONT);
-    assert(aroma[5][2] == AROMA_CONFLICT_SIDE);
-    assert(aroma[3][2] == AROMA_CONFLICT_SIDE);
-    assert(aroma[4][1] == AROMA_CONFLICT_REAR);
+    // assert(aroma[4][3] == AROMA_CONFLICT_FRONT);
+    // assert(aroma[5][2] == AROMA_CONFLICT_SIDE);
+    // assert(aroma[3][2] == AROMA_CONFLICT_SIDE);
+    // assert(aroma[4][1] == AROMA_CONFLICT_REAR);
 
     puts("ok");
     return 0;

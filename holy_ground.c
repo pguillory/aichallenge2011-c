@@ -3,49 +3,28 @@
 #include "map.h"
 #include "holy_ground.h"
 
-// void holy_ground_calculate() {
-//     int row, col;
-//     int row2, col2;
-//     for (row = 0; row < rows; row++) {
-//         for (col = 0; col < cols; col++) {
-//             if ((map[row][col] & SQUARE_HILL) && (owner[row][col] == 0)) {
-//                 for (row2 = 0; row2 < rows; row2++) {
-//                     for (col2 = 0; col2 < cols; col2++) {
-//                         if (distance2(row, col, row2, col2) <= viewradius2) {
-//                             holy_ground[row2][col2] = 1;
-//                         } else {
-//                             holy_ground[row2][col2] = 0;
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
-
 void holy_ground_calculate() {
     static unsigned char holy_ground2[MAX_ROWS][MAX_COLS];
     int i;
-    int row, col;
-    int row2, col2;
-    int direction;
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            holy_ground[row][col] = ((map[row][col] & SQUARE_HILL) && (owner[row][col] == 0));
+    point p, p2;
+    int dir;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            holy_ground[p.row][p.col] = ((map[p.row][p.col] & SQUARE_HILL) && (owner[p.row][p.col] == 0));
         }
     }
 
     for (i = 0; i < HOLY_GROUND_RANGE; i++) {
-        for (row = 0; row < rows; row++) {
-            for (col = 0; col < cols; col++) {
-                if (map[row][col] & SQUARE_LAND) {
-                    holy_ground2[row][col] = holy_ground[row][col];
-                    for (direction = 0; direction < 4; direction++) {
-                        neighbor(row, col, direction, &row2, &col2);
-                        holy_ground2[row][col] |= holy_ground[row2][col2];
+        for (p.row = 0; p.row < rows; p.row++) {
+            for (p.col = 0; p.col < cols; p.col++) {
+                if (map[p.row][p.col] & SQUARE_LAND) {
+                    holy_ground2[p.row][p.col] = holy_ground[p.row][p.col];
+                    for (dir = 0; dir < 4; dir++) {
+                        p2 = neighbor(p, dir);
+                        holy_ground2[p.row][p.col] |= holy_ground[p2.row][p2.col];
                     }
                 } else {
-                    holy_ground2[row][col] = 0;
+                    holy_ground2[p.row][p.col] = 0;
                 }
             }
         }
@@ -58,16 +37,16 @@ void holy_ground_calculate() {
 char *holy_ground_to_string() {
     static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
     char *output = buffer;
-    int row, col;
+    point p;
     char square;
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            square = map[row][col];
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            square = map[p.row][p.col];
             if (square & SQUARE_LAND) {
                 if (square & SQUARE_HILL) {
-                    *output++ = '0' + owner[row][col];
-                } else if (holy_ground[row][col]) {
+                    *output++ = '0' + owner[p.row][p.col];
+                } else if (holy_ground[p.row][p.col]) {
                     *output++ = ',';
                 } else {
                     *output++ = '.';

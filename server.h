@@ -4,6 +4,6 @@
 #include "globals.h"
 
 void server_go();
-void server_order(int row, int col, char direction);
+void server_order(point p, char direction);
 
 #endif

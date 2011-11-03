@@ -5,53 +5,59 @@
 #include "map.h"
 
 void map_reset() {
-    int row, col;
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            map[row][col] = 0;
-            owner[row][col] = 0;
+    point p;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            map[p.row][p.col] = 0;
+            owner[p.row][p.col] = 0;
         }
     }
 }
 
 void map_begin_update() {
-    int row, col;
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            update[row][col] = 0;
+    point p;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            update[p.row][p.col] = 0;
+        }
+    }
+}
+
+void map_foreach(void (*f)(point)) {
+    point p;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            f(p);
         }
     }
 }
 
 void map_finish_update() {
-    int row, col;
-    int row2, col2;
-    int dr, dc;
+    point p, p2, d;
     int viewradius = ceil(sqrt(viewradius2));
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            map[row][col] &= SQUARE_LAND | SQUARE_WATER | SQUARE_FOOD | SQUARE_HILL;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            map[p.row][p.col] &= SQUARE_LAND | SQUARE_WATER | SQUARE_FOOD | SQUARE_HILL;
         }
     }
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            if (update[row][col] & SQUARE_ANT) {
-                map[row][col] |= SQUARE_ANT;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            if (update[p.row][p.col] & SQUARE_ANT) {
+                map[p.row][p.col] |= SQUARE_ANT;
             }
         }
     }
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            if ((map[row][col] & SQUARE_ANT) && (owner[row][col] == 0)) {
-                for (dr = -viewradius; dr <= viewradius; dr++) {
-                    row2 = normalize_row(row + dr);
-                    for (dc = -viewradius; dc <= viewradius; dc++) {
-                        col2 = normalize_col(col + dc);
-                        if (distance2(row, col, row2, col2) <= viewradius2) {
-                            map[row2][col2] |= SQUARE_VISIBLE;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            if ((map[p.row][p.col] & SQUARE_ANT) && (owner[p.row][p.col] == 0)) {
+                for (d.row = -viewradius; d.row <= viewradius; d.row++) {
+                    for (d.col = -viewradius; d.col <= viewradius; d.col++) {
+                        p2 = add_points(p, d);
+                        if (distance2(p, p2) <= viewradius2) {
+                            map[p2.row][p2.col] |= SQUARE_VISIBLE;
                         }
                     }
                 }
@@ -59,84 +65,95 @@ void map_finish_update() {
         }
     }
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            if (map[row][col] & SQUARE_VISIBLE) {
-                if (update[row][col] & SQUARE_WATER) {
-                    map[row][col] |= SQUARE_WATER;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            if (map[p.row][p.col] & SQUARE_VISIBLE) {
+                if (update[p.row][p.col] & SQUARE_WATER) {
+                    map[p.row][p.col] |= SQUARE_WATER;
                 } else {
-                    if (!(map[row][col] & SQUARE_WATER) && !(map[row][col] & SQUARE_LAND)) {
-                        map[row][col] |= SQUARE_LAND;
+                    if (!(map[p.row][p.col] & SQUARE_WATER) && !(map[p.row][p.col] & SQUARE_LAND)) {
+                        map[p.row][p.col] |= SQUARE_LAND;
                     }
                 }
-                if (update[row][col] & SQUARE_FOOD) {
-                    map[row][col] |= SQUARE_FOOD;
+                if (update[p.row][p.col] & SQUARE_FOOD) {
+                    map[p.row][p.col] |= SQUARE_FOOD;
                 } else {
-                    map[row][col] &= ~SQUARE_FOOD;
+                    map[p.row][p.col] &= ~SQUARE_FOOD;
                 }
-                if (update[row][col] & SQUARE_HILL) {
-                    map[row][col] |= SQUARE_HILL;
+                if (update[p.row][p.col] & SQUARE_HILL) {
+                    map[p.row][p.col] |= SQUARE_HILL;
                 } else {
-                    map[row][col] &= ~SQUARE_HILL;
+                    map[p.row][p.col] &= ~SQUARE_HILL;
                 }
             }
         }
     }
 }
 
-//    ?   = Unknown
-//    .   = Land
-//    %   = Water
-//    *   = Food
-// [a..z] = Ant
-// [0..9] = Hill
-// [A..Z] = Ant on a hill
+void map_give(point p, unsigned char mask) {
+    map[p.row][p.col] |= mask;
+}
+
+void map_take(point p, unsigned char mask) {
+    map[p.row][p.col] &= ~mask;
+}
+void map_set_owner(point p, int player) {
+    owner[p.row][p.col] = player;
+}
+
+int friendly_ant_exists_at(point p) {
+    return ((map[p.row][p.col] & SQUARE_ANT) && (owner[p.row][p.col] == 0));
+}
+
+int enemy_ant_exists_at(point p) {
+    return ((map[p.row][p.col] & SQUARE_ANT) && (owner[p.row][p.col] > 0));
+}
 
 void map_load_from_string(char *input) {
-    int i;
-    int row, col;
-    char c;
-
     rows = MAX_ROWS;
     cols = MAX_COLS;
     map_reset();
     rows = 0;
     cols = 0;
 
-    for (i = 0, row = 0, col = 0; ; i++) {
+    int i = 0;
+    point p = {0, 0};
+    char c;
+
+    for (i = 0; ; i++) {
         c = input[i];
         if (c == '.') {
-            map[row][col] |= SQUARE_VISIBLE | SQUARE_LAND;
+            map_give(p, SQUARE_VISIBLE | SQUARE_LAND);
         }
         else if (c == '%') {
-            map[row][col] |= SQUARE_VISIBLE | SQUARE_WATER;
+            map_give(p, SQUARE_VISIBLE | SQUARE_WATER);
         }
         else if (c == '*') {
-            map[row][col] |= SQUARE_VISIBLE | SQUARE_LAND | SQUARE_FOOD;
+            map_give(p, SQUARE_VISIBLE | SQUARE_LAND | SQUARE_FOOD);
         }
         else if (c >= 'a' && c <= 'z') {
-            map[row][col] |= SQUARE_VISIBLE | SQUARE_LAND | SQUARE_ANT;
-            owner[row][col] = c - 'a';
+            map_give(p, SQUARE_VISIBLE | SQUARE_LAND | SQUARE_ANT);
+            map_set_owner(p, c - 'a');
         }
         else if (c >= '0' && c <= '9') {;
-            map[row][col] |= SQUARE_VISIBLE | SQUARE_LAND | SQUARE_HILL;
-            owner[row][col] = c - '0';
+            map_give(p, SQUARE_VISIBLE | SQUARE_LAND | SQUARE_HILL);
+            map_set_owner(p, c - '0');
         }
         else if (c >= 'A' && c <= 'Z') {
-            map[row][col] |= SQUARE_VISIBLE | SQUARE_LAND | SQUARE_ANT | SQUARE_HILL;
-            owner[row][col] = c - 'A';
+            map_give(p, SQUARE_VISIBLE | SQUARE_LAND | SQUARE_ANT | SQUARE_HILL);
+            map_set_owner(p, c - 'A');
         }
 
         if (c == '\n') {
-            row += 1;
-            if (rows <= row) rows = row + 1;
-            col = 0;
+            p.row += 1;
+            if (rows <= p.row) rows = p.row + 1;
+            p.col = 0;
         } else if (c == '\0') {
             break;
         } else {
             if (rows < 1) rows = 1;
-            col += 1;
-            if (cols < col) cols = col;
+            p.col += 1;
+            if (cols < p.col) cols = p.col;
         }
     }
 }
@@ -144,21 +161,21 @@ void map_load_from_string(char *input) {
 char *map_to_string() {
     static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
     char *output = buffer;
-    int row, col;
+    point p;
     char square;
 
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            square = map[row][col];
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            square = map[p.row][p.col];
             if (square & SQUARE_LAND) {
                 if (square & SQUARE_FOOD) {
                     *output++ = '*';
                 } else if ((square & SQUARE_ANT) && (square & SQUARE_HILL)) {
-                    *output++ = 'A' + owner[row][col];
+                    *output++ = 'A' + owner[p.row][p.col];
                 } else if (square & SQUARE_ANT) {
-                    *output++ = 'a' + owner[row][col];
+                    *output++ = 'a' + owner[p.row][p.col];
                 } else if (square & SQUARE_HILL) {
-                    *output++ = '0' + owner[row][col];
+                    *output++ = '0' + owner[p.row][p.col];
                 } else {
                     *output++ = '.';
                 }

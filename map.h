@@ -18,6 +18,8 @@ void map_reset();
 void map_begin_update();
 void map_finish_update();
 void map_load_from_string(char *input);
+int friendly_ant_exists_at(point);
+int enemy_ant_exists_at(point);
 char *map_to_string();
 char *army_to_string();
 

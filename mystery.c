@@ -3,27 +3,27 @@
 #include "mystery.h"
 
 void mystery_reset() {
-    int row, col;
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            if (map[row][col] & SQUARE_VISIBLE) {
-                mystery[row][col] = 0;
+    point p;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            if (map[p.row][p.col] & SQUARE_VISIBLE) {
+                mystery[p.row][p.col] = 0;
             } else {
-                mystery[row][col] = MYSTERY_INITIAL;
+                mystery[p.row][p.col] = MYSTERY_INITIAL;
             }
         }
     }
 }
 
 void mystery_iterate() {
-    int row, col;
-    for (row = 0; row < rows; row++) {
-        for (col = 0; col < cols; col++) {
-            if (map[row][col] & SQUARE_VISIBLE) {
-                mystery[row][col] = 0;
+    point p;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            if (map[p.row][p.col] & SQUARE_VISIBLE) {
+                mystery[p.row][p.col] = 0;
             } else {
-                if ((holy_ground[row][col] == 0) && (mystery[row][col] < MYSTERY_MAX)) {
-                    mystery[row][col] += 1;
+                if ((holy_ground[p.row][p.col] == 0) && (mystery[p.row][p.col] < MYSTERY_MAX)) {
+                    mystery[p.row][p.col] += 1;
                 }
             }
         }

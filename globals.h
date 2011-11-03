@@ -1,6 +1,11 @@
 #ifndef __GAME_H
 #define __GAME_H
 
+typedef struct
+{
+    int row, col;
+} point;
+
 #define NORTH 0
 #define EAST 1
 #define SOUTH 2
@@ -21,10 +26,12 @@ int attackradius2;  /* = 5 */
 int spawnradius2;   /* = 1 */
 int player_seed;    /* = 42 */
 
-int distance2(int row1, int col1, int row2, int col2);
-void neighbor(int row, int col, int direction, int *row2, int *col2);
-int normalize_row(int row);
-int normalize_col(int col);
+point normalize(point);
+point add_points(point, point);
+int points_equal(point, point);
+// int point_is_origin(point p);
+int distance2(point, point);
+point neighbor(point, char direction);
 
 #include <stdio.h>
 FILE *logfile;
