@@ -16,7 +16,7 @@ void support_calculate() {
 
     for (row = 0; row < rows; row++) {
         for (col = 0; col < cols; col++) {
-            if (friendly_ant_exists_at(p)) {
+            if (map_has_friendly_ant(p)) {
                 for (dr = -1; dr <= +1; dr++) {
                     row2 = normalize_row(row + dr);
                     for (dc = -1; dc <= +1; dc++) {
@@ -24,7 +24,7 @@ void support_calculate() {
                         support[p2.row][p2.col] += 1;
                     }
                 }
-                // for (direction = 0; direction < 4; direction++) {
+                // for (direction = 1; direction < STAY; direction *= 2) {
                 //     neighbor(row, col, direction , &row2, &col2);
                 //     support[p2.row][p2.col] += 1;
                 // }

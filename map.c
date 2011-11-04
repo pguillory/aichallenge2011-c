@@ -4,109 +4,133 @@
 #include <math.h>
 #include "map.h"
 
-void map_reset() {
-    point p;
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            map[p.row][p.col] = 0;
-            owner[p.row][p.col] = 0;
-        }
-    }
-}
-
-void map_begin_update() {
-    point p;
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            update[p.row][p.col] = 0;
-        }
-    }
-}
-
-void map_foreach(void (*f)(point)) {
-    point p;
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            f(p);
-        }
-    }
-}
-
-void map_finish_update() {
-    point p, p2, d;
-    int viewradius = ceil(sqrt(viewradius2));
-
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            map[p.row][p.col] &= SQUARE_LAND | SQUARE_WATER | SQUARE_FOOD | SQUARE_HILL;
-        }
-    }
-
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            if (update[p.row][p.col] & SQUARE_ANT) {
-                map[p.row][p.col] |= SQUARE_ANT;
-            }
-        }
-    }
-
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            if ((map[p.row][p.col] & SQUARE_ANT) && (owner[p.row][p.col] == 0)) {
-                for (d.row = -viewradius; d.row <= viewradius; d.row++) {
-                    for (d.col = -viewradius; d.col <= viewradius; d.col++) {
-                        p2 = add_points(p, d);
-                        if (distance2(p, p2) <= viewradius2) {
-                            map[p2.row][p2.col] |= SQUARE_VISIBLE;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            if (map[p.row][p.col] & SQUARE_VISIBLE) {
-                if (update[p.row][p.col] & SQUARE_WATER) {
-                    map[p.row][p.col] |= SQUARE_WATER;
-                } else {
-                    if (!(map[p.row][p.col] & SQUARE_WATER) && !(map[p.row][p.col] & SQUARE_LAND)) {
-                        map[p.row][p.col] |= SQUARE_LAND;
-                    }
-                }
-                if (update[p.row][p.col] & SQUARE_FOOD) {
-                    map[p.row][p.col] |= SQUARE_FOOD;
-                } else {
-                    map[p.row][p.col] &= ~SQUARE_FOOD;
-                }
-                if (update[p.row][p.col] & SQUARE_HILL) {
-                    map[p.row][p.col] |= SQUARE_HILL;
-                } else {
-                    map[p.row][p.col] &= ~SQUARE_HILL;
-                }
-            }
-        }
-    }
-}
-
 void map_give(point p, unsigned char mask) {
     map[p.row][p.col] |= mask;
+}
+
+void map_give_visible(point p) {
+    map_give(p, SQUARE_VISIBLE);
 }
 
 void map_take(point p, unsigned char mask) {
     map[p.row][p.col] &= ~mask;
 }
+
 void map_set_owner(point p, int player) {
     owner[p.row][p.col] = player;
 }
 
-int friendly_ant_exists_at(point p) {
-    return ((map[p.row][p.col] & SQUARE_ANT) && (owner[p.row][p.col] == 0));
+int map_is_visible(point p) {
+    return (map[p.row][p.col] & SQUARE_VISIBLE);
 }
 
-int enemy_ant_exists_at(point p) {
-    return ((map[p.row][p.col] & SQUARE_ANT) && (owner[p.row][p.col] > 0));
+int map_has_land(point p) {
+    return (map[p.row][p.col] & SQUARE_LAND);
+}
+
+int map_has_water(point p) {
+    return (map[p.row][p.col] & SQUARE_WATER);
+}
+
+int map_has_food(point p) {
+    return (map[p.row][p.col] & SQUARE_FOOD);
+}
+
+int map_has_ant(point p) {
+    return (map[p.row][p.col] & SQUARE_ANT);
+}
+
+int map_has_hill(point p) {
+    return (map[p.row][p.col] & SQUARE_HILL);
+}
+
+int map_is_friendly(point p) {
+    return (owner[p.row][p.col] == 0);
+}
+
+int map_is_enemy(point p) {
+    return (owner[p.row][p.col] > 0);
+}
+
+int map_has_friendly_ant(point p) {
+    return (map_has_ant(p) && map_is_friendly(p));
+}
+
+int map_has_enemy_ant(point p) {
+    return (map_has_ant(p) && map_is_enemy(p));
+}
+
+int map_has_friendly_hill(point p) {
+    return (map_has_hill(p) && map_is_friendly(p));
+}
+
+int map_has_enemy_hill(point p) {
+    return (map_has_hill(p) && map_is_enemy(p));
+}
+
+void reset_map_at_point(point p) {
+    map[p.row][p.col] = 0;
+    owner[p.row][p.col] = 0;
+}
+
+void map_reset() {
+    foreach_point(reset_map_at_point);
+}
+
+void reset_update_at_point(point p) {
+    update[p.row][p.col] = 0;
+}
+
+void map_begin_update() {
+    foreach_point(reset_update_at_point);
+}
+
+void carry_over_persistent_bits(point p) {
+    map[p.row][p.col] &= SQUARE_LAND | SQUARE_WATER | SQUARE_FOOD | SQUARE_HILL;
+}
+
+void accept_ant_updates(point p) {
+    if (update[p.row][p.col] & SQUARE_ANT) {
+        map[p.row][p.col] |= SQUARE_ANT;
+    }
+}
+
+void calculate_visibility(point p) {
+    if (map_has_friendly_ant(p)) {
+        foreach_point_within_radius2(p, viewradius2, map_give_visible);
+    }
+}
+
+void accept_other_updates(point p) {
+    if (map_is_visible(p)) {
+        if (update[p.row][p.col] & SQUARE_WATER) {
+            map_give(p, SQUARE_WATER);
+        } else {
+            if (!map_has_water(p) && !map_has_land(p)) {
+                map_give(p, SQUARE_LAND);
+            }
+        }
+        if (update[p.row][p.col] & SQUARE_FOOD) {
+            map_give(p, SQUARE_FOOD);
+        } else {
+            map_take(p, SQUARE_FOOD);
+        }
+        if (update[p.row][p.col] & SQUARE_HILL) {
+            map_give(p, SQUARE_HILL);
+        } else {
+            map_take(p, SQUARE_HILL);
+        }
+    }
+}
+
+void map_finish_update() {
+    foreach_point(carry_over_persistent_bits);
+
+    foreach_point(accept_ant_updates);
+
+    foreach_point(calculate_visibility);
+
+    foreach_point(accept_other_updates);
 }
 
 void map_load_from_string(char *input) {

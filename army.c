@@ -4,76 +4,63 @@
 #include "aroma.h"
 #include "army.h"
 
+#define MIN_ARMY_SIZE 3
+
+void enlist(point p) {
+    army[p.row][p.col] = 0;
+}
+
+void promote(point p) {
+    if (map_has_friendly_ant(p)) {
+        army[p.row][p.col] += 1;
+    }
+}
+
+void initial_inspection(point p) {
+    if (army_aroma[p.row][p.col] == 0.0) return;
+
+    if (map_has_friendly_ant(p)) {
+        foreach_point_within_manhattan_distance(p, 1, promote);
+    }
+}
+
+void officer_promote_neighbors(point p) {
+    if (army[p.row][p.col] < MIN_ARMY_SIZE) return;
+
+    if (map_has_friendly_ant(p)) {
+        foreach_point_within_manhattan_distance(p, 1, promote);
+    }
+}
+
+void final_inspection(point p) {
+    if (army[p.row][p.col] < MIN_ARMY_SIZE) {
+        army[p.row][p.col] = 0;
+    } else {
+        army[p.row][p.col] = 1;
+    }
+}
+
 void army_calculate() {
-    point p, p2, d;
-    int rows_scanned, cols_scanned;
+    foreach_point(enlist);
 
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            army[p.row][p.col] = 0;
-        }
-    }
+    foreach_point(initial_inspection);
 
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            if (army_aroma[p.row][p.col] == 0.0) continue;
+    foreach_point(officer_promote_neighbors);
 
-            if (friendly_ant_exists_at(p)) {
-                for (d.row = -1, rows_scanned = 0; d.row <= 1 && rows_scanned < rows; d.row++, rows_scanned++) {
-                    for (d.col = -1, cols_scanned = 0; d.col <= 1 && cols_scanned < cols; d.col++, cols_scanned++) {
-                        p2 = add_points(p, d);
-                        if (points_equal(p, p2)) continue;
-                        if (friendly_ant_exists_at(p2)) {
-                            army[p.row][p.col] += 1;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            if (army[p.row][p.col] < 2) continue;
-
-            if (friendly_ant_exists_at(p)) {
-                for (d.row = -1, rows_scanned = 0; d.row <= 1 && rows_scanned < rows; d.row++, rows_scanned++) {
-                    for (d.col = -1, cols_scanned = 0; d.col <= 1 && cols_scanned < cols; d.col++, cols_scanned++) {
-                        p2 = add_points(p, d);
-                        if (points_equal(p, p2)) continue;
-                        if (friendly_ant_exists_at(p2)) {
-                            army[p2.row][p2.col] = 2;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            if (army[p.row][p.col] < 2) {
-                army[p.row][p.col] = 0;
-            } else {
-                army[p.row][p.col] = 1;
-            }
-        }
-    }
+    foreach_point(final_inspection);
 }
 
 char *army_to_string() {
     static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
     char *output = buffer;
     point p;
-    char square;
 
     for (p.row = 0; p.row < rows; p.row++) {
         for (p.col = 0; p.col < cols; p.col++) {
-            square = map[p.row][p.col];
-            if (square & SQUARE_LAND) {
-                if (square & SQUARE_FOOD) {
+            if (map_has_land(p)) {
+                if (map_has_food(p)) {
                     *output++ = '*';
-                } else if (square & SQUARE_ANT) {
+                } else if (map_has_ant(p)) {
                     // *output++ = '0' + army[p.row][p.col];
                     if (army[p.row][p.col]) {
                         *output++ = 'A' + owner[p.row][p.col];
@@ -83,7 +70,7 @@ char *army_to_string() {
                 } else {
                     *output++ = '.';
                 }
-            } else if (square & SQUARE_WATER) {
+            } else if (map_has_water(p)) {
                 *output++ = '%';
             } else {
                 *output++ = '?';
@@ -109,9 +96,10 @@ int main(int argc, char *argv[]) {
             "....a.......a.........a...\n"
             ".................aa...a...\n"
             "..........................\n"
-            "....a..a..................\n"
-            "....aa.a..................\n"
-            "..........................\n"
+            "....a..a.......aaaa.......\n"
+            "....aa.a..........a.......\n"
+            "................a.a.......\n"
+            "..................a.......\n"
             "..........................";
     expected = "..AA..b.....*.............\n"
                "...AA.b............a......\n"
@@ -119,9 +107,10 @@ int main(int argc, char *argv[]) {
                "....a.......a.........A...\n"
                ".................aa...A...\n"
                "..........................\n"
-               "....A..a..................\n"
-               "....AA.a..................\n"
-               "..........................\n"
+               "....A..a.......AAAA.......\n"
+               "....AA.a..........A.......\n"
+               "................a.A.......\n"
+               "..................A.......\n"
                "..........................";
     map_load_from_string(input);
     aroma_stabilize();

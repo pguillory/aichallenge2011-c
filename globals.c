@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include "globals.h"
 
 point normalize(point p) {
@@ -19,9 +20,45 @@ int points_equal(point p1, point p2) {
     return ((p1.row == p2.row) && (p1.col == p2.col));
 }
 
-// int point_is_origin(point p) {
-//     return ((p.row == 0) && (p.col == 0));
-// }
+int point_is_origin(point p) {
+    return ((p.row == 0) && (p.col == 0));
+}
+
+void foreach_point(void (*f)(point)) {
+    point p;
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            f(p);
+        }
+    }
+}
+
+void foreach_point_within_manhattan_distance(point p, int distance, void (*f)(point)) {
+    point d;
+    int rows_scanned, cols_scanned;
+    for (d.row = -distance, rows_scanned = 0; d.row <= distance && rows_scanned < rows; d.row++, rows_scanned++) {
+        for (d.col = -distance, cols_scanned = 0; d.col <= distance && cols_scanned < cols; d.col++, cols_scanned++) {
+            f(add_points(p, d));
+        }
+    }
+}
+
+void foreach_point_within_radius2(point p, int radius2, void (*f)(point)) {
+    int radius = ceil(sqrt(radius2));
+    point d, p2;
+    int rows_scanned, cols_scanned;
+    for (d.row = -radius, rows_scanned = 0; d.row <= radius && rows_scanned < rows; d.row++, rows_scanned++) {
+        for (d.col = -radius, cols_scanned = 0; d.col <= radius && cols_scanned < cols; d.col++, cols_scanned++) {
+            p2 = add_points(p, d);
+            if (distance2(p, p2) <= radius2) {
+                f(p2);
+            }
+        }
+    }
+}
+
+// void foreach_neighbor(point p, void (*f)(point)) {
+
 
 int abs(int x) {
     return (x >= 0) ? x : -x;
@@ -75,6 +112,8 @@ point neighbor(point p, char dir) {
         case WEST:
             p.col -= 1;
             return normalize(p);
+        case STAY:
+            return p;
     }
     assert(0);
 }

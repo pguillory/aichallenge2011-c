@@ -3,31 +3,33 @@
 #include "map.h"
 #include "holy_ground.h"
 
-void holy_ground_calculate() {
-    static unsigned char holy_ground2[MAX_ROWS][MAX_COLS];
-    int i;
-    point p, p2;
+unsigned char holy_ground2[MAX_ROWS][MAX_COLS];
+
+void reset_holy_ground_at_point(point p) {
+    holy_ground[p.row][p.col] = map_has_friendly_hill(p);
+}
+
+void spread_holy_ground_at_point(point p) {
     int dir;
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            holy_ground[p.row][p.col] = ((map[p.row][p.col] & SQUARE_HILL) && (owner[p.row][p.col] == 0));
+    point p2;
+    if (map_has_land(p)) {
+        holy_ground2[p.row][p.col] = holy_ground[p.row][p.col];
+        for (dir = 1; dir < STAY; dir *= 2) {
+            p2 = neighbor(p, dir);
+            holy_ground2[p.row][p.col] |= holy_ground[p2.row][p2.col];
         }
+    } else {
+        holy_ground2[p.row][p.col] = 0;
     }
+}
+
+void holy_ground_calculate() {
+    int i;
+    
+    foreach_point(reset_holy_ground_at_point);
 
     for (i = 0; i < HOLY_GROUND_RANGE; i++) {
-        for (p.row = 0; p.row < rows; p.row++) {
-            for (p.col = 0; p.col < cols; p.col++) {
-                if (map[p.row][p.col] & SQUARE_LAND) {
-                    holy_ground2[p.row][p.col] = holy_ground[p.row][p.col];
-                    for (dir = 0; dir < 4; dir++) {
-                        p2 = neighbor(p, dir);
-                        holy_ground2[p.row][p.col] |= holy_ground[p2.row][p2.col];
-                    }
-                } else {
-                    holy_ground2[p.row][p.col] = 0;
-                }
-            }
-        }
+        foreach_point(spread_holy_ground_at_point);
 
         assert(sizeof(holy_ground) == sizeof(holy_ground2));
         memcpy(holy_ground, holy_ground2, sizeof(holy_ground));
@@ -38,20 +40,18 @@ char *holy_ground_to_string() {
     static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
     char *output = buffer;
     point p;
-    char square;
 
     for (p.row = 0; p.row < rows; p.row++) {
         for (p.col = 0; p.col < cols; p.col++) {
-            square = map[p.row][p.col];
-            if (square & SQUARE_LAND) {
-                if (square & SQUARE_HILL) {
+            if (map_has_land(p)) {
+                if (map_has_hill(p)) {
                     *output++ = '0' + owner[p.row][p.col];
                 } else if (holy_ground[p.row][p.col]) {
                     *output++ = ',';
                 } else {
                     *output++ = '.';
                 }
-            } else if (square & SQUARE_WATER) {
+            } else if (map_has_water(p)) {
                 *output++ = '%';
             } else {
                 *output++ = '?';

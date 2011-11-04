@@ -7,28 +7,13 @@
 #include "army.h"
 #include "directions.h"
 
-char direction_symbols[] = {'N', 'E', 'S', 'W'};
-
-struct square_t {
-    int row;
-    int col;
-    struct square_t *next, *previous;
-    struct square_t *north, *east, *south, *west;
-    char contents;
-    char owner;
-    char direction;
-    float aroma;
-};
-
-struct square_t squares[MAX_ROWS][MAX_COLS];
-
-#define MOVE_NORTH 1
-#define MOVE_EAST  2
-#define MOVE_SOUTH 4
-#define MOVE_WEST  8
-#define MOVE_STAY 16
-
 static char available_moves[MAX_ROWS][MAX_COLS];
+point best_p;
+char best_dir;
+float best_value;
+point worst_p;
+char worst_dir;
+float worst_value;
 
 float value_at(point p) {
     return aroma[p.row][p.col] - threat[p.row][p.col] * 1000.0;
@@ -42,19 +27,13 @@ float move_value(point p, int move) {
     point p2;
 
     switch (move) {
-        case MOVE_NORTH:
-            p2 = neighbor(p, NORTH);
+        case NORTH:
+        case EAST:
+        case SOUTH:
+        case WEST:
+            p2 = neighbor(p, move);
             break;
-        case MOVE_EAST:
-            p2 = neighbor(p, EAST);
-            break;
-        case MOVE_SOUTH:
-            p2 = neighbor(p, SOUTH);
-            break;
-        case MOVE_WEST:
-            p2 = neighbor(p, WEST);
-            break;
-        case MOVE_STAY:
+        case STAY:
             return 0;
         default:
             assert(0);
@@ -62,180 +41,89 @@ float move_value(point p, int move) {
 
     if (army[p.row][p.col]) {
         return army_value_at(p2) - army_value_at(p);
-        // return (army_aroma[p2.row][p2.col] - threat[p2.row][p2.col] * 1000.0) - (army_aroma[p.row][p.col] - threat[p.row][p.col] * 1000.0);
     } else {
         return value_at(p2) - value_at(p);
-        // return (aroma[p2.row][p2.col] - threat[p2.row][p2.col] * 1000.0) - (aroma[p.row][p.col] - threat[p.row][p.col] * 1000.0);
     }
+}
 
-    // return aroma[p2.row][p2.col] - aroma[p.row][p.col];
+void reset_at(point p) {
+    point p2;
+    int dir;
+
+    directions[p.row][p.col] = 0;
+    available_moves[p.row][p.col] = 0;
+
+    if (map_has_friendly_ant(p)) {
+        for (dir = 1; dir <= STAY; dir *= 2) {
+            p2 = neighbor(p, dir);
+            if (map_has_land(p2) && !map_has_food(p2) && !enemy_could_occupy[p2.row][p2.col]) {
+                available_moves[p.row][p.col] |= dir;
+            }
+        }
+    }
+}
+
+// void bar_admission_to(point p) {
+//     
+// }
+
+void available_move_take(point p, int dir) {
+    available_moves[p.row][p.col] &= ~dir;
 }
 
 void directions_calculate() {
     point p;
-    point p2;
-    point best_p, to_p;
-    // int best_p.row, best_p.col;
-    // int to_p.row, to_p.col;
-    char best_move;
-    float best_value;
+    point to_p;
     float value;
+    int dir;
 
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            if (friendly_ant_exists_at(p)) {
-                directions[p.row][p.col] = '-';
-                available_moves[p.row][p.col] = MOVE_STAY;
-                p2 = neighbor(p, NORTH);
-                if ((map[p2.row][p2.col] & SQUARE_LAND) && !(map[p2.row][p2.col] & SQUARE_FOOD) && !((map[p2.row][p2.col] & SQUARE_ANT) && owner[p2.row][p2.col])) {
-                    available_moves[p.row][p.col] |= MOVE_NORTH;
-                }
-                p2 = neighbor(p, EAST);
-                if ((map[p2.row][p2.col] & SQUARE_LAND) && !(map[p2.row][p2.col] & SQUARE_FOOD) && !((map[p2.row][p2.col] & SQUARE_ANT) && owner[p2.row][p2.col])) {
-                    available_moves[p.row][p.col] |= MOVE_EAST;
-                }
-                p2 = neighbor(p, SOUTH);
-                if ((map[p2.row][p2.col] & SQUARE_LAND) && !(map[p2.row][p2.col] & SQUARE_FOOD) && !((map[p2.row][p2.col] & SQUARE_ANT) && owner[p2.row][p2.col])) {
-                    available_moves[p.row][p.col] |= MOVE_SOUTH;
-                }
-                p2 = neighbor(p, WEST);
-                if ((map[p2.row][p2.col] & SQUARE_LAND) && !(map[p2.row][p2.col] & SQUARE_FOOD) && !((map[p2.row][p2.col] & SQUARE_ANT) && owner[p2.row][p2.col])) {
-                    available_moves[p.row][p.col] |= MOVE_WEST;
-                }
-            } else {
-                directions[p.row][p.col] = '.';
-                available_moves[p.row][p.col] = 0;
-            }
-         }
-    }
+    foreach_point(reset_at);
 
     do {
-        // find first move
+        // find any move
         for (p.row = 0; p.row < rows; p.row++) {
             for (p.col = 0; p.col < cols; p.col++) {
-                if (available_moves[p.row][p.col] & MOVE_NORTH) {
-                    best_move = MOVE_NORTH;
-                    goto moves_available;
-                }
-                if (available_moves[p.row][p.col] & MOVE_EAST) {
-                    best_move = MOVE_EAST;
-                    goto moves_available;
-                }
-                if (available_moves[p.row][p.col] & MOVE_SOUTH) {
-                    best_move = MOVE_SOUTH;
-                    goto moves_available;
-                }
-                if (available_moves[p.row][p.col] & MOVE_WEST) {
-                    best_move = MOVE_WEST;
-                    goto moves_available;
-                }
-                if (available_moves[p.row][p.col] & MOVE_STAY) {
-                    best_move = MOVE_STAY;
-                    goto moves_available;
+                if (available_moves[p.row][p.col]) {
+                    for (dir = 1; dir <= STAY; dir *= 2) {
+                        if (available_moves[p.row][p.col] & dir) {
+                            best_p = p;
+                            best_dir = dir;
+                            best_value = move_value(p, dir);
+                            goto moves_available;
+                        }
+                    }
                 }
             }
         }
 
-        // no moves available
         goto no_moves_available;
 
-    moves_available:
-
-        best_p = p;
-        best_value = move_value(best_p, best_move);
+moves_available:
 
         // find best move
         for (p.row = 0; p.row < rows; p.row++) {
             for (p.col = 0; p.col < cols; p.col++) {
-                if (available_moves[p.row][p.col] & MOVE_NORTH) {
-                    value = move_value(p, MOVE_NORTH);
-                    if (best_value < value) {
-                        best_move = MOVE_NORTH;
-                        best_value = value;
-                        best_p = p;
-                    }
-                }
-                if (available_moves[p.row][p.col] & MOVE_EAST) {
-                    value = move_value(p, MOVE_EAST);
-                    if (best_value < value) {
-                        best_move = MOVE_EAST;
-                        best_value = value;
-                        best_p = p;
-                    }
-                }
-                if (available_moves[p.row][p.col] & MOVE_SOUTH) {
-                    value = move_value(p, MOVE_SOUTH);
-                    if (best_value < value) {
-                        best_move = MOVE_SOUTH;
-                        best_value = value;
-                        best_p = p;
-                    }
-                }
-                if (available_moves[p.row][p.col] & MOVE_WEST) {
-                    value = move_value(p, MOVE_WEST);
-                    if (best_value < value) {
-                        best_move = MOVE_WEST;
-                        best_value = value;
-                        best_p = p;
-                    }
-                }
-                if (available_moves[p.row][p.col] & MOVE_STAY) {
-                    value = move_value(p, MOVE_STAY);
-                    if (best_value < value) {
-                        best_move = MOVE_STAY;
-                        best_value = value;
-                        best_p = p;
+                for (dir = 1; dir <= STAY; dir *= 2) {
+                    if (available_moves[p.row][p.col] & dir) {
+                        value = move_value(p, dir);
+                        if (best_value < value) {
+                            best_p = p;
+                            best_dir = dir;
+                            best_value = value;
+                        }
                     }
                 }
             }
         }
 
-        switch (best_move) {
-            case MOVE_NORTH:
-                directions[best_p.row][best_p.col] = 'N';
-                available_moves[best_p.row][best_p.col] = 0;
-                to_p = neighbor(best_p, NORTH);
-                available_moves[to_p.row][to_p.col] &= ~MOVE_STAY;
-                p2 = neighbor(to_p, WEST);  available_moves[p2.row][p2.col] &= ~MOVE_EAST;
-                p2 = neighbor(to_p, NORTH); available_moves[p2.row][p2.col] &= ~MOVE_SOUTH;
-                p2 = neighbor(to_p, EAST);  available_moves[p2.row][p2.col] &= ~MOVE_WEST;
-                break;
-            case MOVE_EAST:
-                directions[best_p.row][best_p.col] = 'E';
-                available_moves[best_p.row][best_p.col] = 0;
-                to_p = neighbor(best_p, EAST);
-                available_moves[to_p.row][to_p.col] &= ~MOVE_STAY;
-                p2 = neighbor(to_p, NORTH); available_moves[p2.row][p2.col] &= ~MOVE_SOUTH;
-                p2 = neighbor(to_p, EAST);  available_moves[p2.row][p2.col] &= ~MOVE_WEST;
-                p2 = neighbor(to_p, SOUTH); available_moves[p2.row][p2.col] &= ~MOVE_NORTH;
-                break;
-            case MOVE_SOUTH:
-                directions[best_p.row][best_p.col] = 'S';
-                available_moves[best_p.row][best_p.col] = 0;
-                to_p = neighbor(best_p, SOUTH);
-                available_moves[to_p.row][to_p.col] &= ~MOVE_STAY;
-                p2 = neighbor(to_p, EAST);  available_moves[p2.row][p2.col] &= ~MOVE_WEST;
-                p2 = neighbor(to_p, SOUTH); available_moves[p2.row][p2.col] &= ~MOVE_NORTH;
-                p2 = neighbor(to_p, WEST);  available_moves[p2.row][p2.col] &= ~MOVE_EAST;
-                break;
-            case MOVE_WEST:
-                directions[best_p.row][best_p.col] = 'W';
-                available_moves[best_p.row][best_p.col] = 0;
-                to_p = neighbor(best_p, WEST);
-                available_moves[to_p.row][to_p.col] &= ~MOVE_STAY;
-                p2 = neighbor(to_p, SOUTH); available_moves[p2.row][p2.col] &= ~MOVE_NORTH;
-                p2 = neighbor(to_p, WEST);  available_moves[p2.row][p2.col] &= ~MOVE_EAST;
-                p2 = neighbor(to_p, NORTH); available_moves[p2.row][p2.col] &= ~MOVE_SOUTH;
-                break;
-            case MOVE_STAY:
-                directions[best_p.row][best_p.col] = 'X';
-                available_moves[best_p.row][best_p.col] = 0;
-                p2 = neighbor(best_p, NORTH); available_moves[p2.row][p2.col] &= ~MOVE_SOUTH;
-                p2 = neighbor(best_p, EAST);  available_moves[p2.row][p2.col] &= ~MOVE_WEST;
-                p2 = neighbor(best_p, SOUTH); available_moves[p2.row][p2.col] &= ~MOVE_NORTH;
-                p2 = neighbor(best_p, WEST);  available_moves[p2.row][p2.col] &= ~MOVE_EAST;
-                break;
-        }
+        directions[best_p.row][best_p.col] = best_dir;
+        available_moves[best_p.row][best_p.col] = 0;
+        to_p = neighbor(best_p, best_dir);
+        available_move_take(to_p, STAY);
+        available_move_take(neighbor(to_p, NORTH), SOUTH);
+        available_move_take(neighbor(to_p, EAST), WEST);
+        available_move_take(neighbor(to_p, SOUTH), NORTH);
+        available_move_take(neighbor(to_p, WEST), EAST);
     } while (1);
 
 no_moves_available: {}
@@ -249,8 +137,26 @@ char *directions_to_string() {
 
     for (p.row = 0; p.row < rows; p.row++) {
         for (p.col = 0; p.col < cols; p.col++) {
-            // *output++ = squares[p.row][p.col].direction;
-            *output++ = directions[p.row][p.col];
+            switch (directions[p.row][p.col]) {
+                case NORTH:
+                    *output++ = 'N';
+                    break;
+                case EAST:
+                    *output++ = 'E';
+                    break;
+                case SOUTH:
+                    *output++ = 'S';
+                    break;
+                case WEST:
+                    *output++ = 'W';
+                    break;
+                case STAY:
+                    *output++ = 'X';
+                    break;
+                default:
+                    *output++ = '.';
+                    break;
+            }
         }
         *output++ = '\n';
     }
@@ -284,7 +190,7 @@ int main(int argc, char *argv[]) {
     army_calculate();
     directions_calculate();
     // puts(directions_to_string());
-    assert(directions[0][0] == 'E');
+    assert(directions[0][0] == EAST);
 
     input = "a%...%*%\n"
             "...%...%\n"
@@ -300,7 +206,7 @@ int main(int argc, char *argv[]) {
     directions_calculate();
     // puts(directions_to_string());
     
-    assert(directions[0][0] == 'S');
+    assert(directions[0][0] == SOUTH);
 
     // map_load_from_string(".........%\n"
     //                      ".........%\n"
@@ -342,10 +248,10 @@ int main(int argc, char *argv[]) {
     army_calculate();
     directions_calculate();
     // puts(directions_to_string());
-    assert(directions[0][1] == 'E');
-    assert(directions[0][2] == 'E');
-    assert(directions[1][1] == 'E');
-    assert(directions[1][2] == 'E');
+    assert(directions[0][1] == EAST);
+    assert(directions[0][2] == EAST);
+    assert(directions[1][1] == EAST);
+    assert(directions[1][2] == EAST);
     
     input = "..a...b.....*......................\n"
             "......b.....*......................";

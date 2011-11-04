@@ -10,26 +10,27 @@ void bot_init() {
     
 }
 
-void bot_issue_orders() {
-    point p;
-    // int row2, col2;
-    char direction;
-
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            if (friendly_ant_exists_at(p)) {
-                direction = directions[p.row][p.col];
-                switch (direction) {
-                    case 'N':
-                    case 'S':
-                    case 'E':
-                    case 'W':
-                        server_order(p, direction);
-                        break;
-                }
-            }
+void issue_order_at(point p) {
+    if (map_has_friendly_ant(p)) {
+        switch (directions[p.row][p.col]) {
+            case NORTH:
+                server_order(p, 'N');
+                break;
+            case EAST:
+                server_order(p, 'E');
+                break;
+            case SOUTH:
+                server_order(p, 'S');
+                break;
+            case WEST:
+                server_order(p, 'W');
+                break;
         }
     }
+}
+
+void bot_issue_orders() {
+    foreach_point(issue_order_at);
 }
 
 #ifdef UNIT_TESTS
