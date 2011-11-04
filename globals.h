@@ -36,6 +36,7 @@ void foreach_point_within_manhattan_distance(point, int distance, void (*f)(poin
 void foreach_point_within_radius2(point, int radius2, void (*f)(point));
 int distance2(point, point);
 point neighbor(point, char direction);
+char dir2char(int dir);
 
 #include <stdio.h>
 FILE *logfile;

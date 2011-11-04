@@ -16,11 +16,11 @@ point worst_p;
 char worst_dir;
 
 float value_at(point p) {
-    return aroma[p.row][p.col] - threat[p.row][p.col] * 1000.0;
+    return aroma[p.row][p.col] - threat[p.row][p.col] * 10000.0;
 }
 
 float army_value_at(point p) {
-    return army_aroma[p.row][p.col] - threat[p.row][p.col] * 1000.0;
+    return army_aroma[p.row][p.col] - threat[p.row][p.col] * 10000.0;
 }
 
 float move_value(point p, int move) {
@@ -170,48 +170,6 @@ void directions_calculate() {
 
     foreach_point(save_crushed_ant);
     foreach_point(resolve_short_loops);
-
-    // do {
-    //     // find any move
-    //     for (p.row = 0; p.row < rows; p.row++) {
-    //         for (p.col = 0; p.col < cols; p.col++) {
-    //             if (available_moves[p.row][p.col]) {
-    //                 for (dir = 1; dir <= STAY; dir *= 2) {
-    //                     if (available_moves[p.row][p.col] & dir) {
-    //                         best_p = p;
-    //                         best_dir = dir;
-    //                         best_value = move_value(p, dir);
-    //                         goto moves_available;
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // 
-    //     goto no_moves_available;
-
-// moves_available:
-
-        // // find best move
-        // for (p.row = 0; p.row < rows; p.row++) {
-        //     for (p.col = 0; p.col < cols; p.col++) {
-        //         for (dir = 1; dir <= STAY; dir *= 2) {
-        //             if (available_moves[p.row][p.col] & dir) {
-        //                 value = move_value(p, dir);
-        //                 if (best_value < value) {
-        //                     best_p = p;
-        //                     best_dir = dir;
-        //                     best_value = value;
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
-    //     select_move(best_p, best_dir);
-    // } while (1);
-
-// no_moves_available: {}
 }
 
 
@@ -321,12 +279,15 @@ int main(int argc, char *argv[]) {
     // // puts(directions_to_string());
     // assert(strcmp(directions_to_string(), expected) == 0);
     
-    input = ".aa...b.....*......................\n"
-            ".aa.........*......................";
+    input = ".aa.........*%\n"
+            ".aa...b.....*%\n"
+            "..a.........*%\n"
+            "............*%";
     map_load_from_string(input);
     // puts(map_to_string());
     holy_ground_calculate();
     threat_calculate();
+    // puts(threat_to_string());
     mystery_reset();
     aroma_stabilize();
     // puts(aroma_to_string());
@@ -403,8 +364,32 @@ int main(int argc, char *argv[]) {
     // puts(aroma_to_string());
     army_calculate();
     directions_calculate();
-    puts(directions_to_string());
+    // puts(directions_to_string());
     assert(strcmp(directions_to_string(), expected) == 0);
+
+    input = "%%.......\n"
+            "%%.......\n"
+            "..aaaaa..\n"
+            ".....aa..\n"
+            "%%.....%%\n"
+            "..bb..%%%\n"
+            ".....b...\n"
+            ".........\n"
+            ".........\n"
+            ".........";
+    map_load_from_string(input);
+    holy_ground_calculate();
+    threat_calculate();
+    puts(threat_to_string());
+    mystery_reset();
+    aroma_stabilize();
+    army_calculate();
+    directions_calculate();
+    puts(directions_to_string());
+    assert(directions[2][2] == WEST);
+    assert(directions[2][3] == WEST);
+    assert(directions[2][4] == WEST);
+    assert(directions[2][5] == WEST);
 
     puts("ok");
     return 0;

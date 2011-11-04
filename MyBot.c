@@ -76,7 +76,7 @@ void read_command(char *command) {
 
                 start_time = now();
                 aroma_time = 0;
-                for (i = 0; aroma_time < 200; i++) {
+                for (i = 0; aroma_time < 50; i++) {
                     aroma_iterate();
                     aroma_time = now() - start_time;
                 }
@@ -89,7 +89,7 @@ void read_command(char *command) {
                 directions_calculate();
                 directions_time = now() - start_time;
 
-                fprintf(logfile, "turn %i, times %4i %4i %4i %4i %4i %4i %4i\n", turn,
+                fprintf(logfile, "turn %i, %i aroma iters, times %4i %4i %4i %4i %4i %4i %4i\n", turn, i,
                         map_time, holy_ground_time, threat_time, mystery_time, aroma_time, army_time, directions_time);
 
                 bot_issue_orders();

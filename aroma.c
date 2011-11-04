@@ -8,7 +8,7 @@
 
 #define AROMA_NATURAL_DISSIPATION  0.95
 #define AROMA_ANT_DISSIPATION      0.0
-#define AROMA_ARMY_ANT_DISSIPATION 0.6
+#define AROMA_ARMY_ANT_DISSIPATION 0.2
 
 #define AROMA_FOOD               100.0
 #define AROMA_ENEMY                1.0

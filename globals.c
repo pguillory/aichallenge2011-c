@@ -117,6 +117,22 @@ point neighbor(point p, char dir) {
     assert(0);
 }
 
+char dir2char(int dir) {
+    switch (dir) {
+        case NORTH:
+            return 'N';
+        case SOUTH:
+            return 'S';
+        case EAST:
+            return 'E';
+        case WEST:
+            return 'W';
+        case STAY:
+            return 'X';
+    }
+    return '?';
+}
+
 // int normalize_row(int row) {
 //     while (row < rows) row += rows;
 //     return row % rows;
