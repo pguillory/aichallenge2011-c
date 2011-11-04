@@ -52,40 +52,50 @@ void read_command(char *command) {
 
     point p;
     int player;
+    int i;
+    int map_time, holy_ground_time, threat_time, mystery_time, aroma_time, army_time, directions_time;
+
     switch (word_count) {
         case 1:
             if (0 == strcmp(words[0], "go")) {
-                fprintf(logfile, "end turn %i\n", turn);
                 start_time = now();
                 map_finish_update();
-                fprintf(logfile, "map_finish_update(): %li ms elapsed\n", now() - start_time);
+                map_time = now() - start_time;
+
                 start_time = now();
                 holy_ground_calculate();
-                fprintf(logfile, "holy_ground_calculate(): %li ms elapsed\n", now() - start_time);
+                holy_ground_time = now() - start_time;
+
                 start_time = now();
                 threat_calculate();
-                fprintf(logfile, "threat_calculate(): %li ms elapsed\n", now() - start_time);
+                threat_time = now() - start_time;
+
                 start_time = now();
                 mystery_iterate();
-                fprintf(logfile, "mystery_iterate(): %li ms elapsed\n", now() - start_time);
+                mystery_time = now() - start_time;
+
                 start_time = now();
-                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                // aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                // aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                // aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                // aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate(); aroma_iterate();
-                fprintf(logfile, "aroma_iterate(): %li ms elapsed\n", now() - start_time);
+                aroma_time = 0;
+                for (i = 0; aroma_time < 200; i++) {
+                    aroma_iterate();
+                    aroma_time = now() - start_time;
+                }
+
                 start_time = now();
                 army_calculate();
-                fprintf(logfile, "army_calculate(): %li ms elapsed\n", now() - start_time);
+                army_time = now() - start_time;
+
                 start_time = now();
                 directions_calculate();
-                fprintf(logfile, "directions_calculate(): %li ms elapsed\n", now() - start_time);
-                start_time = now();
-                // dump_state();
+                directions_time = now() - start_time;
+
+                fprintf(logfile, "turn %i, times %4i %4i %4i %4i %4i %4i %4i\n", turn,
+                        map_time, holy_ground_time, threat_time, mystery_time, aroma_time, army_time, directions_time);
+
                 bot_issue_orders();
-                fprintf(logfile, "bot_issue_orders(): %li ms elapsed\n", now() - start_time);
+
+                // dump_state();
+                fflush(logfile);
                 server_go();
             } else if (0 == strcmp(words[0], "ready")) {
                 bot_init();
@@ -99,7 +109,6 @@ void read_command(char *command) {
             if (0 == strcmp(words[0], "turn")) {
                 turn = atoi(words[1]);
                 if (turn > 0) {
-                    fprintf(logfile, "start turn %i\n", turn);
                     map_begin_update();
                 }
             } else if (0 == strcmp(words[0], "loadtime")) {

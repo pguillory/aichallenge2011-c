@@ -83,6 +83,8 @@ void reset_update_at_point(point p) {
 
 void map_begin_update() {
     foreach_point(reset_update_at_point);
+    friendly_ant_count = 0;
+    enemy_ant_count = 0;
 }
 
 void carry_over_persistent_bits(point p) {
@@ -92,6 +94,11 @@ void carry_over_persistent_bits(point p) {
 void accept_ant_updates(point p) {
     if (update[p.row][p.col] & SQUARE_ANT) {
         map[p.row][p.col] |= SQUARE_ANT;
+        if (map_is_friendly(p)) {
+            friendly_ant_count += 1;
+        } else {
+            enemy_ant_count += 1;
+        }
     }
 }
 

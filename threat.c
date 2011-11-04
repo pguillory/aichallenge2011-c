@@ -33,6 +33,8 @@ void add_threat_for_each_enemy_that_could_attack(point p) {
     int rows_scanned, cols_scanned;
 
     if (map_has_enemy_ant(p)) {
+        enemy_could_occupy[p.row][p.col] = 1;
+
         for (d.row = -attackradius, rows_scanned = 0; d.row <= attackradius && rows_scanned < rows; d.row++, rows_scanned++) {
             for (d.col = -attackradius, cols_scanned = 0; d.col <= attackradius && cols_scanned < cols; d.col++, cols_scanned++) {
                 p2 = add_points(p, d);

@@ -13,6 +13,7 @@
 unsigned char map[MAX_ROWS][MAX_COLS];
 unsigned char update[MAX_ROWS][MAX_COLS];
 unsigned char owner[MAX_ROWS][MAX_COLS];
+int friendly_ant_count, enemy_ant_count;
 
 int map_is_visible(point);
 int map_has_land(point);

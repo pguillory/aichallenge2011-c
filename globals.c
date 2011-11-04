@@ -46,9 +46,8 @@ void foreach_point_within_manhattan_distance(point p, int distance, void (*f)(po
 void foreach_point_within_radius2(point p, int radius2, void (*f)(point)) {
     int radius = ceil(sqrt(radius2));
     point d, p2;
-    int rows_scanned, cols_scanned;
-    for (d.row = -radius, rows_scanned = 0; d.row <= radius && rows_scanned < rows; d.row++, rows_scanned++) {
-        for (d.col = -radius, cols_scanned = 0; d.col <= radius && cols_scanned < cols; d.col++, cols_scanned++) {
+    for (d.row = -radius; d.row <= radius; d.row++) {
+        for (d.col = -radius; d.col <= radius; d.col++) {
             p2 = add_points(p, d);
             if (distance2(p, p2) <= radius2) {
                 f(p2);
