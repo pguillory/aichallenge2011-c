@@ -5,7 +5,7 @@
 #include "map.h"
 
 void map_give(point p, unsigned char mask) {
-    map[p.row][p.col] |= mask;
+    grid(map, p) |= mask;
 }
 
 void map_give_visible(point p) {
@@ -13,43 +13,43 @@ void map_give_visible(point p) {
 }
 
 void map_take(point p, unsigned char mask) {
-    map[p.row][p.col] &= ~mask;
+    grid(map, p) &= ~mask;
 }
 
 void map_set_owner(point p, int player) {
-    owner[p.row][p.col] = player;
+    grid(owner, p) = player;
 }
 
 int map_is_visible(point p) {
-    return (map[p.row][p.col] & SQUARE_VISIBLE);
+    return (grid(map, p) & SQUARE_VISIBLE);
 }
 
 int map_has_land(point p) {
-    return (map[p.row][p.col] & SQUARE_LAND);
+    return (grid(map, p) & SQUARE_LAND);
 }
 
 int map_has_water(point p) {
-    return (map[p.row][p.col] & SQUARE_WATER);
+    return (grid(map, p) & SQUARE_WATER);
 }
 
 int map_has_food(point p) {
-    return (map[p.row][p.col] & SQUARE_FOOD);
+    return (grid(map, p) & SQUARE_FOOD);
 }
 
 int map_has_ant(point p) {
-    return (map[p.row][p.col] & SQUARE_ANT);
+    return (grid(map, p) & SQUARE_ANT);
 }
 
 int map_has_hill(point p) {
-    return (map[p.row][p.col] & SQUARE_HILL);
+    return (grid(map, p) & SQUARE_HILL);
 }
 
 int map_is_friendly(point p) {
-    return (owner[p.row][p.col] == 0);
+    return (grid(owner, p) == 0);
 }
 
 int map_is_enemy(point p) {
-    return (owner[p.row][p.col] > 0);
+    return (grid(owner, p) > 0);
 }
 
 int map_has_friendly_ant(point p) {
@@ -69,8 +69,8 @@ int map_has_enemy_hill(point p) {
 }
 
 void reset_map_at_point(point p) {
-    map[p.row][p.col] = 0;
-    owner[p.row][p.col] = 0;
+    grid(map, p) = 0;
+    grid(owner, p) = 0;
 }
 
 void map_reset() {
@@ -78,26 +78,26 @@ void map_reset() {
 }
 
 void reset_update_at_point(point p) {
-    update[p.row][p.col] = 0;
+    grid(update, p) = 0;
 }
 
 void map_begin_update() {
     foreach_point(reset_update_at_point);
     friendly_ant_count = 0;
-    enemy_ant_count = 0;
+    visible_enemy_ant_count = 0;
 }
 
 void carry_over_persistent_bits(point p) {
-    map[p.row][p.col] &= SQUARE_LAND | SQUARE_WATER | SQUARE_FOOD | SQUARE_HILL;
+    grid(map, p) &= SQUARE_LAND | SQUARE_WATER | SQUARE_FOOD | SQUARE_HILL;
 }
 
 void accept_ant_updates(point p) {
-    if (update[p.row][p.col] & SQUARE_ANT) {
-        map[p.row][p.col] |= SQUARE_ANT;
+    if (grid(update, p) & SQUARE_ANT) {
+        grid(map, p) |= SQUARE_ANT;
         if (map_is_friendly(p)) {
             friendly_ant_count += 1;
         } else {
-            enemy_ant_count += 1;
+            visible_enemy_ant_count += 1;
         }
     }
 }
@@ -110,23 +110,25 @@ void calculate_visibility(point p) {
 
 void accept_other_updates(point p) {
     if (map_is_visible(p)) {
-        if (update[p.row][p.col] & SQUARE_WATER) {
+        if (grid(update, p) & SQUARE_WATER) {
             map_give(p, SQUARE_WATER);
         } else {
             if (!map_has_water(p) && !map_has_land(p)) {
                 map_give(p, SQUARE_LAND);
             }
         }
-        if (update[p.row][p.col] & SQUARE_FOOD) {
+        if (grid(update, p) & SQUARE_FOOD) {
             map_give(p, SQUARE_FOOD);
         } else {
             map_take(p, SQUARE_FOOD);
         }
-        if (update[p.row][p.col] & SQUARE_HILL) {
+        if (grid(update, p) & SQUARE_HILL) {
             map_give(p, SQUARE_HILL);
         } else {
             map_take(p, SQUARE_HILL);
         }
+    } else {
+        potential_enemy_ant_count += 1;
     }
 }
 
@@ -134,6 +136,7 @@ void map_finish_update() {
     foreach_point(carry_over_persistent_bits);
 
     foreach_point(accept_ant_updates);
+    potential_enemy_ant_count = visible_enemy_ant_count;
 
     foreach_point(calculate_visibility);
 
@@ -197,16 +200,16 @@ char *map_to_string() {
 
     for (p.row = 0; p.row < rows; p.row++) {
         for (p.col = 0; p.col < cols; p.col++) {
-            square = map[p.row][p.col];
+            square = grid(map, p);
             if (square & SQUARE_LAND) {
                 if (square & SQUARE_FOOD) {
                     *output++ = '*';
                 } else if ((square & SQUARE_ANT) && (square & SQUARE_HILL)) {
-                    *output++ = 'A' + owner[p.row][p.col];
+                    *output++ = 'A' + grid(owner, p);
                 } else if (square & SQUARE_ANT) {
-                    *output++ = 'a' + owner[p.row][p.col];
+                    *output++ = 'a' + grid(owner, p);
                 } else if (square & SQUARE_HILL) {
-                    *output++ = '0' + owner[p.row][p.col];
+                    *output++ = '0' + grid(owner, p);
                 } else {
                     *output++ = '.';
                 }

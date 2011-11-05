@@ -7,7 +7,7 @@ float aroma[MAX_ROWS][MAX_COLS];
 float army_aroma[MAX_ROWS][MAX_COLS];
 
 void aroma_reset();
-void aroma_iterate();
+void aroma_iterate(int times);
 char *aroma_to_string();
 
 #endif

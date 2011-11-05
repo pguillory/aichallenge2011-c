@@ -1,10 +1,12 @@
-#ifndef __GAME_H
-#define __GAME_H
+#ifndef __GLOBALS_H
+#define __GLOBALS_H
 
 typedef struct
 {
     int row, col;
 } point;
+
+#define grid(g, p) g[p.row][p.col]
 
 #define NORTH 1
 #define EAST  2
@@ -27,6 +29,7 @@ int attackradius2;  /* = 5 */
 int spawnradius2;   /* = 1 */
 int player_seed;    /* = 42 */
 
+long int now();
 point normalize(point);
 point add_points(point, point);
 int points_equal(point, point);

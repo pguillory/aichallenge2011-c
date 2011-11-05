@@ -6,20 +6,20 @@
 unsigned char holy_ground2[MAX_ROWS][MAX_COLS];
 
 void reset_holy_ground_at_point(point p) {
-    holy_ground[p.row][p.col] = map_has_friendly_hill(p);
+    grid(holy_ground, p) = map_has_friendly_hill(p);
 }
 
 void spread_holy_ground_at_point(point p) {
     int dir;
     point p2;
     if (map_has_land(p)) {
-        holy_ground2[p.row][p.col] = holy_ground[p.row][p.col];
+        grid(holy_ground2, p) = grid(holy_ground, p);
         for (dir = 1; dir < STAY; dir *= 2) {
             p2 = neighbor(p, dir);
-            holy_ground2[p.row][p.col] |= holy_ground[p2.row][p2.col];
+            grid(holy_ground2, p) |= grid(holy_ground, p2);
         }
     } else {
-        holy_ground2[p.row][p.col] = 0;
+        grid(holy_ground2, p) = 0;
     }
 }
 
@@ -45,8 +45,8 @@ char *holy_ground_to_string() {
         for (p.col = 0; p.col < cols; p.col++) {
             if (map_has_land(p)) {
                 if (map_has_hill(p)) {
-                    *output++ = '0' + owner[p.row][p.col];
-                } else if (holy_ground[p.row][p.col]) {
+                    *output++ = '0' + grid(owner, p);
+                } else if (grid(holy_ground, p)) {
                     *output++ = ',';
                 } else {
                     *output++ = '.';

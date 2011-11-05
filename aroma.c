@@ -8,10 +8,10 @@
 
 #define AROMA_NATURAL_DISSIPATION  0.95
 #define AROMA_ANT_DISSIPATION      0.0
-#define AROMA_ARMY_ANT_DISSIPATION 0.2
+#define AROMA_ARMY_ANT_DISSIPATION 0.1
 
 #define AROMA_FOOD               100.0
-#define AROMA_ENEMY                1.0
+#define AROMA_ENEMY                5.0
 #define AROMA_INTRUDER           200.0
 #define AROMA_ENEMY_HILL         500.0
 #define AROMA_MYSTERY             10.0
@@ -21,8 +21,8 @@
 #define AROMA_CONFLICT_REAR        0.0
 
 void reset_aroma_at(point p) {
-    aroma[p.row][p.col] = 0.0;
-    army_aroma[p.row][p.col] = 0.0;
+    grid(aroma, p) = 0.0;
+    grid(army_aroma, p) = 0.0;
 }
 
 void aroma_reset() {
@@ -31,46 +31,70 @@ void aroma_reset() {
 
 void dissipate_aroma(point p) {
     if (map_has_friendly_ant(p)) {
-        aroma[p.row][p.col] *= AROMA_ANT_DISSIPATION;
-        army_aroma[p.row][p.col] *= AROMA_ARMY_ANT_DISSIPATION;
+        grid(aroma, p) *= AROMA_ANT_DISSIPATION;
+        grid(army_aroma, p) *= AROMA_ARMY_ANT_DISSIPATION;
     } else {
-        aroma[p.row][p.col] *= AROMA_NATURAL_DISSIPATION;
-        army_aroma[p.row][p.col] *= AROMA_NATURAL_DISSIPATION;
+        grid(aroma, p) *= AROMA_NATURAL_DISSIPATION;
+        grid(army_aroma, p) *= AROMA_NATURAL_DISSIPATION;
     }
 }
 
-void spread_aroma(float aroma[MAX_ROWS][MAX_COLS]) {
-    point p, p2;
+float aroma1[MAX_ROWS][MAX_COLS];
+float aroma2[MAX_ROWS][MAX_COLS];
+float *channels[MAX_ROWS][MAX_COLS][5];
+int channel_counts[MAX_ROWS][MAX_COLS];
+
+void add_channel(point p, float *channel) {
+    int count = channel_counts[p.row][p.col]++;
+    channels[p.row][p.col][count] = channel;
+}
+
+void calculate_channels_at(point p) {
     int dir;
-    float sum;
-    int count;
-    float aroma2[MAX_ROWS][MAX_COLS];
+    point p2;
 
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            if (!map_has_water(p)) {
-                sum = aroma[p.row][p.col];
-                count = 1;
-
-                for (dir = 1; dir < STAY; dir *= 2) {
-                    p2 = neighbor(p, dir);
-
-                    if (!map_has_water(p2)) {
-                        sum += aroma[p2.row][p2.col];
-                        count += 1;
-                    }
-                }
-
-                aroma2[p.row][p.col] = sum / count;
-            } else {
-                aroma2[p.row][p.col] = 0;
+    if (!map_has_water(p)) {
+        add_channel(p, &grid(aroma1, p));
+        for (dir = 1; dir < STAY; dir *= 2) {
+            p2 = neighbor(p, dir);
+            if (!map_has_water(p2)) {
+                add_channel(p, &grid(aroma1, p2));
             }
         }
     }
-    // printf("sizeof(aroma) = %i\n", sizeof(aroma));
-    // printf("sizeof(aroma2) = %i\n", sizeof(aroma2));
-    // assert(sizeof(aroma) == sizeof(aroma2));
-    memcpy(aroma, aroma2, sizeof(aroma2));
+}
+
+void calculate_channels() {
+    memset(channels, 0, sizeof(channels));
+    memset(channel_counts, 0, sizeof(channel_counts));
+
+    foreach_point(calculate_channels_at);
+}
+
+void spread_aroma_at(point p) {
+    int i;
+    int count = channel_counts[p.row][p.col];
+    float sum = 0;
+
+    if (count) {
+        for (i = 0; i < count; i++) {
+            sum += *channels[p.row][p.col][i];
+        }
+
+        aroma2[p.row][p.col] = sum / count;
+    } else {
+        aroma2[p.row][p.col] = 0;
+    }
+}
+
+void spread_aroma() {
+    memcpy(aroma1, aroma, sizeof(aroma));
+    foreach_point(spread_aroma_at);
+    memcpy(aroma, aroma2, sizeof(aroma));
+    
+    memcpy(aroma1, army_aroma, sizeof(aroma));
+    foreach_point(spread_aroma_at);
+    memcpy(army_aroma, aroma2, sizeof(aroma));
 }
 
 void add_aroma(point p) {
@@ -78,54 +102,69 @@ void add_aroma(point p) {
     int dir;
 
     if (map_has_food(p)) {
-        aroma[p.row][p.col] += AROMA_FOOD;
+        grid(aroma, p) += AROMA_FOOD;
     }
     if (map_has_enemy_hill(p)) {
-        aroma[p.row][p.col] += AROMA_ENEMY_HILL;
-        army_aroma[p.row][p.col] += AROMA_ENEMY_HILL;
+        grid(aroma, p) += AROMA_ENEMY_HILL;
+        grid(army_aroma, p) += AROMA_ENEMY_HILL;
     }
-    aroma[p.row][p.col] += AROMA_MYSTERY * mystery[p.row][p.col] / MYSTERY_MAX;
-    // if (!(square & (SQUARE_LAND | SQUARE_WATER))) {
-    //     aroma[p.row][p.col] += AROMA_UNDISCOVERED;
-    // }
+    grid(aroma, p) += AROMA_MYSTERY * grid(mystery, p) / MYSTERY_MAX;
 
     if (map_has_ant(p)) {
         if (map_is_enemy(p)) {
-            if (holy_ground[p.row][p.col]) {
-                aroma[p.row][p.col] += AROMA_INTRUDER;
-                army_aroma[p.row][p.col] += AROMA_INTRUDER;
+            if (grid(holy_ground, p)) {
+                grid(aroma, p) += AROMA_INTRUDER;
+                grid(army_aroma, p) += AROMA_INTRUDER;
             } else {
-                // aroma[p.row][p.col] += AROMA_ENEMY;
-                army_aroma[p.row][p.col] += AROMA_ENEMY;
+                // grid(aroma, p) += AROMA_ENEMY;
+                grid(army_aroma, p) += AROMA_ENEMY;
             }
         } else {
             for (dir = 1; dir < STAY; dir *= 2) {
                 p2 = neighbor(p, dir);
-                if (enemy_could_attack[p.row][p.col] < enemy_could_attack[p2.row][p2.col]) {
-                    // aroma[p.row][p.col] += AROMA_CONFLICT;
-                    // aroma[p2.row][p2.col] += AROMA_CONFLICT_FRONT;
-                    army_aroma[p2.row][p2.col] += AROMA_CONFLICT_FRONT;
+                if (grid(enemy_could_attack, p) < grid(enemy_could_attack, p2)) {
+                    // grid(aroma, p) += AROMA_CONFLICT;
+                    // grid(aroma, p2) += AROMA_CONFLICT_FRONT;
+                    grid(army_aroma, p2) += AROMA_CONFLICT_FRONT;
                 }
             }
         }
     }
 }
 
-void aroma_iterate() {
-    foreach_point(dissipate_aroma);
+void aroma_iterate(int times) {
+    // long int start_time;
+    int i;
+    // long int channels_time = 0;
+    // long int dissipate_time = 0;
+    // long int spread_time = 0;
+    // long int add_time = 0;
 
-    spread_aroma(aroma);
-    spread_aroma(army_aroma);
+    // start_time = now();
+    calculate_channels();
+    // channels_time += now() - start_time;
 
-    foreach_point(add_aroma);
+    for (i = 0; i < times; i++) {
+        // start_time = now();
+        foreach_point(dissipate_aroma);
+        // dissipate_time += now() - start_time;
+
+        // start_time = now();
+        spread_aroma();
+        // spread_time += now() - start_time;
+
+        // start_time = now();
+        foreach_point(add_aroma);
+        // add_time += now() - start_time;
+    }
+
+    // fprintf(logfile, "aroma_iterate(1): channels=%li, dissipate=%li, spread=%li, add=%li\n",
+    //         channels_time, dissipate_time, spread_time, add_time);
 }
 
 void aroma_stabilize() {
     aroma_reset();
-    int i;
-    for (i = 0; i < 100; i++) {
-        aroma_iterate();
-    }
+    aroma_iterate(20);
 }
 
 char *aroma_to_string() {
@@ -137,7 +176,7 @@ char *aroma_to_string() {
 
     for (p.row = 0; p.row < rows; p.row++) {
         for (p.col = 0; p.col < cols; p.col++) {
-            v = aroma[p.row][p.col];
+            v = grid(aroma, p);
             if (v <= 0) c = '-';
             else if (v < 1) c = '0';
             else if (v < 2) c = '1';
@@ -174,7 +213,7 @@ char *army_aroma_to_string() {
 
     for (p.row = 0; p.row < rows; p.row++) {
         for (p.col = 0; p.col < cols; p.col++) {
-            v = army_aroma[p.row][p.col];
+            v = grid(army_aroma, p);
             if (v <= 0) c = '-';
             else if (v < 1) c = '0';
             else if (v < 2) c = '1';
@@ -211,6 +250,7 @@ char *army_aroma_to_string() {
 #include "threat.c"
 #include "mystery.c"
 int main(int argc, char *argv[]) {
+    init_log();
     attackradius2 = 5;
     viewradius2 = 55;
     // puts(aroma_to_string());
@@ -278,7 +318,7 @@ int main(int argc, char *argv[]) {
     threat_calculate();
     mystery_reset();
     aroma_reset();
-    aroma_iterate();
+    aroma_iterate(1);
     // puts(aroma_to_string());
     assert(aroma[0][0] == AROMA_FOOD);
     assert(aroma[0][1] == AROMA_ENEMY_HILL);
@@ -288,7 +328,7 @@ int main(int argc, char *argv[]) {
     threat_calculate();
     mystery_reset();
     aroma_reset();
-    aroma_iterate();
+    aroma_iterate(1);
     // puts(aroma_to_string());
     assert(HOLY_GROUND_RANGE == 12);
     // printf("%f %f %f %f\n", aroma[0][11], aroma[0][12], aroma[0][13], aroma[0][14]);
@@ -306,13 +346,13 @@ int main(int argc, char *argv[]) {
     threat_calculate();
     mystery_reset();
     aroma_reset();
-    aroma_iterate();
+    aroma_iterate(1);
     // puts(aroma_to_string());
     assert(aroma[0][0] >= AROMA_MYSTERY * MYSTERY_INITIAL / MYSTERY_MAX - 0.00001);
     assert(aroma[0][0] <= AROMA_MYSTERY * MYSTERY_INITIAL / MYSTERY_MAX + 0.00001);
     mystery[0][0] = MYSTERY_MAX;
     aroma_reset();
-    aroma_iterate();
+    aroma_iterate(1);
     assert(aroma[0][0] == AROMA_MYSTERY);
 
     map_load_from_string("..................\n"
@@ -332,7 +372,7 @@ int main(int argc, char *argv[]) {
     threat_calculate();
     mystery_reset();
     aroma_reset();
-    aroma_iterate();
+    aroma_iterate(1);
     // puts(aroma_to_string());
     // puts(army_aroma_to_string());
     // printf("%f %f %f %f %f\n", aroma[4][2], aroma[4][3], aroma[5][2], aroma[3][2], aroma[4][1]);

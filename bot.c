@@ -12,7 +12,7 @@ void bot_init() {
 
 void issue_order_at(point p) {
     if (map_has_friendly_ant(p)) {
-        switch (directions[p.row][p.col]) {
+        switch (grid(directions, p)) {
             case NORTH:
                 server_order(p, 'N');
                 break;

@@ -1,6 +1,11 @@
 #include <assert.h>
 #include <math.h>
+#include <time.h>
 #include "globals.h"
+
+long int now() {
+    return clock() / (CLOCKS_PER_SEC / 1000);
+}
 
 point normalize(point p) {
     while (p.row < rows) p.row += rows;

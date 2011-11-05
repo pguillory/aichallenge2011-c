@@ -7,17 +7,17 @@
 #define MIN_ARMY_SIZE 3
 
 void enlist(point p) {
-    army[p.row][p.col] = 0;
+    grid(army, p) = 0;
 }
 
 void promote(point p) {
     if (map_has_friendly_ant(p)) {
-        army[p.row][p.col] += 1;
+        grid(army, p) += 1;
     }
 }
 
 void initial_inspection(point p) {
-    if (army_aroma[p.row][p.col] == 0.0) return;
+    if (grid(army_aroma, p) == 0.0) return;
 
     if (map_has_friendly_ant(p)) {
         foreach_point_within_manhattan_distance(p, 1, promote);
@@ -25,7 +25,7 @@ void initial_inspection(point p) {
 }
 
 void officer_promote_neighbors(point p) {
-    if (army[p.row][p.col] < MIN_ARMY_SIZE) return;
+    if (grid(army, p) < MIN_ARMY_SIZE) return;
 
     if (map_has_friendly_ant(p)) {
         foreach_point_within_manhattan_distance(p, 1, promote);
@@ -33,10 +33,10 @@ void officer_promote_neighbors(point p) {
 }
 
 void final_inspection(point p) {
-    if (army[p.row][p.col] < MIN_ARMY_SIZE) {
-        army[p.row][p.col] = 0;
+    if (grid(army, p) < MIN_ARMY_SIZE) {
+        grid(army, p) = 0;
     } else {
-        army[p.row][p.col] = 1;
+        grid(army, p) = 1;
     }
 }
 
@@ -61,11 +61,11 @@ char *army_to_string() {
                 if (map_has_food(p)) {
                     *output++ = '*';
                 } else if (map_has_ant(p)) {
-                    // *output++ = '0' + army[p.row][p.col];
-                    if (army[p.row][p.col]) {
-                        *output++ = 'A' + owner[p.row][p.col];
+                    // *output++ = '0' + grid(army, p);
+                    if (grid(army, p)) {
+                        *output++ = 'A' + grid(owner, p);
                     } else {
-                        *output++ = 'a' + owner[p.row][p.col];
+                        *output++ = 'a' + grid(owner, p);
                     }
                 } else {
                     *output++ = '.';

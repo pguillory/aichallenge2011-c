@@ -4,9 +4,9 @@
 
 void reset_mystery_at(point p) {
     if (map_is_visible(p)) {
-        mystery[p.row][p.col] = 0;
+        grid(mystery, p) = 0;
     } else {
-        mystery[p.row][p.col] = MYSTERY_INITIAL;
+        grid(mystery, p) = MYSTERY_INITIAL;
     }
 }
 
@@ -16,10 +16,10 @@ void mystery_reset() {
 
 void iterate_mystery_at(point p) {
     if (map_is_visible(p)) {
-        mystery[p.row][p.col] = 0;
+        grid(mystery, p) = 0;
     } else {
-        if ((holy_ground[p.row][p.col] == 0) && (mystery[p.row][p.col] < MYSTERY_MAX)) {
-            mystery[p.row][p.col] += 1;
+        if ((grid(holy_ground, p) == 0) && (grid(mystery, p) < MYSTERY_MAX)) {
+            grid(mystery, p) += 1;
         }
     }
 }

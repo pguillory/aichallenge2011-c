@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <time.h>
 #include "globals.h"
 #include "map.h"
 #include "holy_ground.h"
@@ -29,11 +28,6 @@ void dump_state() {
     // logs(directions_to_string());
 }
 
-long int start_time, end_time;
-long int now() {
-    return clock() / (CLOCKS_PER_SEC / 1000);
-}
-
 void read_command(char *command) {
     char *words[256];
     int word_count = 0;
@@ -53,6 +47,7 @@ void read_command(char *command) {
     point p;
     int player;
     int i;
+    long int start_time;
     int map_time, holy_ground_time, threat_time, mystery_time, aroma_time, army_time, directions_time;
 
     switch (word_count) {
@@ -76,8 +71,8 @@ void read_command(char *command) {
 
                 start_time = now();
                 aroma_time = 0;
-                for (i = 0; aroma_time < 50; i++) {
-                    aroma_iterate();
+                for (i = 0; aroma_time < 200; i += 25) {
+                    aroma_iterate(25);
                     aroma_time = now() - start_time;
                 }
 
@@ -89,7 +84,8 @@ void read_command(char *command) {
                 directions_calculate();
                 directions_time = now() - start_time;
 
-                fprintf(logfile, "turn %i, %i aroma iters, times %4i %4i %4i %4i %4i %4i %4i\n", turn, i,
+                fprintf(logfile, "turn %i, ai %i, friendly %i, enemy %i, potential %i, times %i %i %i %i %i %i %i\n",
+                        turn, i, friendly_ant_count, visible_enemy_ant_count, potential_enemy_ant_count,
                         map_time, holy_ground_time, threat_time, mystery_time, aroma_time, army_time, directions_time);
 
                 bot_issue_orders();
@@ -137,11 +133,11 @@ void read_command(char *command) {
             if (0 == strcmp(words[0], "w")) {
                 p.row = atoi(words[1]);
                 p.col = atoi(words[2]);
-                update[p.row][p.col] |= SQUARE_WATER;
+                grid(update, p) |= SQUARE_WATER;
             } else if (0 == strcmp(words[0], "f")) {
                 p.row = atoi(words[1]);
                 p.col = atoi(words[2]);
-                update[p.row][p.col] |= SQUARE_FOOD;
+                grid(update, p) |= SQUARE_FOOD;
             }
             break;
 
@@ -150,14 +146,14 @@ void read_command(char *command) {
                 p.row = atoi(words[1]);
                 p.col = atoi(words[2]);
                 player = atoi(words[3]);
-                update[p.row][p.col] |= SQUARE_HILL;
-                owner[p.row][p.col] = player;
+                grid(update, p) |= SQUARE_HILL;
+                grid(owner, p) = player;
             } else if (0 == strcmp(words[0], "a")) {
                 p.row = atoi(words[1]);
                 p.col = atoi(words[2]);
                 player = atoi(words[3]);
-                update[p.row][p.col] |= SQUARE_ANT;
-                owner[p.row][p.col] = player;
+                grid(update, p) |= SQUARE_ANT;
+                grid(owner, p) = player;
             } else if (0 == strcmp(words[0], "d")) {
                 // dead ant
             }
