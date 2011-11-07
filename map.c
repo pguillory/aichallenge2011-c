@@ -8,10 +8,6 @@ void map_give(point p, unsigned char mask) {
     grid(map, p) |= mask;
 }
 
-void map_give_visible(point p) {
-    map_give(p, SQUARE_VISIBLE);
-}
-
 void map_take(point p, unsigned char mask) {
     grid(map, p) &= ~mask;
 }
@@ -75,23 +71,25 @@ void reset_map_at_point(point p) {
 
 void map_reset() {
     foreach_point(reset_map_at_point);
+    food_consumed = 0;
+    friendly_dead_ant_count = 0;
+    enemy_dead_ant_count = 0;
 }
 
-void reset_update_at_point(point p) {
+void map_begin_update_at(point p) {
     grid(update, p) = 0;
+    grid(visible_ally_count, p) = 0;
 }
 
 void map_begin_update() {
-    foreach_point(reset_update_at_point);
-    friendly_ant_count = 0;
-    visible_enemy_ant_count = 0;
+    foreach_point(map_begin_update_at);
 }
 
 void carry_over_persistent_bits(point p) {
     grid(map, p) &= SQUARE_LAND | SQUARE_WATER | SQUARE_FOOD | SQUARE_HILL;
 }
 
-void accept_ant_updates(point p) {
+void accept_ant_updates_at(point p) {
     if (grid(update, p) & SQUARE_ANT) {
         grid(map, p) |= SQUARE_ANT;
         if (map_is_friendly(p)) {
@@ -102,13 +100,31 @@ void accept_ant_updates(point p) {
     }
 }
 
-void calculate_visibility(point p) {
-    if (map_has_friendly_ant(p)) {
-        foreach_point_within_radius2(p, viewradius2, map_give_visible);
+void accept_ant_updates() {
+    friendly_ant_count = 0;
+    visible_enemy_ant_count = 0;
+    foreach_point(accept_ant_updates_at);
+    if (turn == 1) {
+        initial_friendly_ant_count = friendly_ant_count;
     }
 }
 
-void accept_other_updates(point p) {
+
+void give_visible_at(point p) {
+    map_give(p, SQUARE_VISIBLE);
+    grid(visible_ally_count, p) += 1;
+}
+
+void calculate_visibility(point p) {
+    if (map_has_friendly_ant(p)) {
+        foreach_point_within_radius2(p, viewradius2, give_visible_at);
+    }
+}
+
+void accept_other_updates_at(point p) {
+    int dir;
+    point p2;
+
     if (map_is_visible(p)) {
         if (grid(update, p) & SQUARE_WATER) {
             map_give(p, SQUARE_WATER);
@@ -120,27 +136,37 @@ void accept_other_updates(point p) {
         if (grid(update, p) & SQUARE_FOOD) {
             map_give(p, SQUARE_FOOD);
         } else {
-            map_take(p, SQUARE_FOOD);
+            if (map_has_food(p)) {
+                for (dir = 1; dir < STAY; dir *= 2) {
+                    p2 = neighbor(p, dir);
+                    if (map_has_friendly_ant(p2)) {
+                        food_consumed += 1;
+                        break;
+                    }
+                }
+                map_take(p, SQUARE_FOOD);
+            }
         }
         if (grid(update, p) & SQUARE_HILL) {
             map_give(p, SQUARE_HILL);
         } else {
             map_take(p, SQUARE_HILL);
         }
-    } else {
-        potential_enemy_ant_count += 1;
     }
+}
+
+void accept_other_updates() {
+    foreach_point(accept_other_updates_at);
 }
 
 void map_finish_update() {
     foreach_point(carry_over_persistent_bits);
 
-    foreach_point(accept_ant_updates);
-    potential_enemy_ant_count = visible_enemy_ant_count;
+    accept_ant_updates();
 
     foreach_point(calculate_visibility);
 
-    foreach_point(accept_other_updates);
+    accept_other_updates();
 }
 
 void map_load_from_string(char *input) {

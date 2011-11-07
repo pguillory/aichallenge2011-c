@@ -2,6 +2,7 @@
 #include <math.h>
 #include <string.h>
 #include "map.h"
+#include "potential_enemy.h"
 #include "holy_ground.h"
 #include "threat.h"
 
@@ -10,7 +11,7 @@ void reset_threat_at(point p) {
     int dir;
 
     grid(threat, p) = 0;
-    if (map_has_land(p)) {
+    if (map_has_land(p) && !map_has_enemy_hill(p)) {
         side_count = 0;
         for (dir = 1; dir < STAY; dir *= 2) {
             if (map_has_water(neighbor(p, dir))) {
@@ -18,7 +19,7 @@ void reset_threat_at(point p) {
             }
         }
         if (side_count >= 3) {
-            grid(threat, p) += 9;
+            grid(threat, p) += 1;
         }
     }
     grid(enemy_could_occupy, p) = 0;
@@ -78,7 +79,8 @@ void adjust_threat(point p) {
     } else {
         if ((grid(threat, p) > 0) &&
             (grid(holy_ground, p) == 0) &&
-            (friendly_ant_count < potential_enemy_ant_count)
+            (friendly_ant_count < potential_enemy_ant_count / 5) &&
+            (grid(visible_ally_count, p) < 20)
         ) {
             grid(threat, p) += 1;
         }
@@ -86,14 +88,28 @@ void adjust_threat(point p) {
 }
 
 void decrement_threat_around_friendly_ant(point p) {
+    int dir;
+    point p2;
+
     // this doesn't really work.  it allows even trades sometimes
     if (map_has_friendly_ant(p)) {
-        decrement_threat_to_zero(p);
-        decrement_threat_to_zero(neighbor(p, NORTH));
-        decrement_threat_to_zero(neighbor(p, EAST));
-        decrement_threat_to_zero(neighbor(p, SOUTH));
-        decrement_threat_to_zero(neighbor(p, WEST));
+        // decrement_threat_to_zero(p);
+        // decrement_threat_to_zero(neighbor(p, NORTH));
+        // decrement_threat_to_zero(neighbor(p, EAST));
+        // decrement_threat_to_zero(neighbor(p, SOUTH));
+        // decrement_threat_to_zero(neighbor(p, WEST));
+
         // foreach_point_within_manhattan_distance(p, 1, decrement_threat_to_zero);
+
+        for (dir = 1; dir < STAY; dir *= 2) {
+            p2 = neighbor(p, dir);
+            if (map_has_land(p2) &&
+                (grid(enemy_could_attack, p2) > grid(enemy_could_attack, p))
+            ) {
+                foreach_point_within_manhattan_distance(p, 1, decrement_threat_to_zero);
+                break;
+            }
+        }
     }
 }
 
@@ -194,11 +210,11 @@ void threat_calculate() {
     // fprintf(logfile, "adjust_threat: %li\n", now() - start_time);
 
     // start_time = now();
-    foreach_point(reset_available_ant_at);
-    foreach_point(scan_for_potential_line_attacks);
+    // foreach_point(reset_available_ant_at);
+    // foreach_point(scan_for_potential_line_attacks);
     // fprintf(logfile, "scan_for_potential_line_attacks: %li\n", now() - start_time);
 
-    // foreach_point(decrement_threat_around_friendly_ant);
+    foreach_point(decrement_threat_around_friendly_ant);
 }
 
 char *threat_to_string() {
@@ -246,6 +262,7 @@ char *threat_to_string() {
 #undef UNIT_TESTS
 #include "globals.c"
 #include "map.c"
+#include "potential_enemy.c"
 #include "holy_ground.c"
 int main(int argc, char *argv[]) {
     char *map_string, *threat_string;

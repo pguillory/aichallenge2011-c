@@ -1,3 +1,6 @@
-A C starter pack created by flagcapper. If given any unexpected input, it will crash. Compile using the makefile or with:
-
-gcc *.c -o MyBot -lm
+todo:
+move to a friendly hill is never allowed
+fix corner combat bug
+log hills (remaining/total), ants (live+standby, dead)
+avoid walls when fleeing.. rank moves by wall score
+avoid killing the last enemy, cap hills instead

@@ -8,7 +8,7 @@
 
 #define AROMA_NATURAL_DISSIPATION  0.95
 #define AROMA_ANT_DISSIPATION      0.0
-#define AROMA_ARMY_ANT_DISSIPATION 0.1
+#define AROMA_ARMY_ANT_DISSIPATION 0.05
 
 #define AROMA_FOOD               100.0
 #define AROMA_ENEMY                5.0
@@ -16,7 +16,7 @@
 #define AROMA_ENEMY_HILL         500.0
 #define AROMA_MYSTERY             10.0
 #define AROMA_CONFLICT             0.0
-#define AROMA_CONFLICT_FRONT      80.0
+#define AROMA_CONFLICT_FRONT      20.0
 #define AROMA_CONFLICT_SIDE        0.0
 #define AROMA_CONFLICT_REAR        0.0
 
@@ -120,12 +120,16 @@ void add_aroma(point p) {
                 grid(army_aroma, p) += AROMA_ENEMY;
             }
         } else {
-            for (dir = 1; dir < STAY; dir *= 2) {
-                p2 = neighbor(p, dir);
-                if (grid(enemy_could_attack, p) < grid(enemy_could_attack, p2)) {
-                    // grid(aroma, p) += AROMA_CONFLICT;
-                    // grid(aroma, p2) += AROMA_CONFLICT_FRONT;
-                    grid(army_aroma, p2) += AROMA_CONFLICT_FRONT;
+            if (grid(visible_ally_count, p) >= 3) {
+                for (dir = 1; dir < STAY; dir *= 2) {
+                    p2 = neighbor(p, dir);
+                    if (map_has_land(p2) &&
+                        (grid(enemy_could_attack, p2) > grid(enemy_could_attack, p))
+                    ) {
+                        // grid(aroma, p) += AROMA_CONFLICT;
+                        grid(aroma, p2) += AROMA_CONFLICT_FRONT;
+                        grid(army_aroma, p2) += AROMA_CONFLICT_FRONT;
+                    }
                 }
             }
         }

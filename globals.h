@@ -24,7 +24,6 @@ int rows;           /* = MAX_ROWS */
 int cols;           /* = MAX_COLS */
 int turns;          /* = 500 */
 int viewradius2;    /* = 55 */
-// float viewradius;
 int attackradius2;  /* = 5 */
 int spawnradius2;   /* = 1 */
 int player_seed;    /* = 42 */
@@ -42,7 +41,9 @@ point neighbor(point, char direction);
 char dir2char(int dir);
 
 #include <stdio.h>
+#ifdef DEBUG
 FILE *logfile;
+#endif
 void init_log();
 void logs(char *s);
 

@@ -5,7 +5,7 @@
 #include "threat.h"
 #include "aroma.h"
 #include "army.h"
-#include "directions.h"
+#include "moves.h"
 
 int available_move_count;
 float best_value;
@@ -46,17 +46,17 @@ float move_value(point p, int move) {
     }
 }
 
-void reset_directions_at(point p) {
+void reset_moves_at(point p) {
     int dir;
     point p2;
 
-    grid(directions, p) = 0;
+    grid(moves, p) = 0;
 
     if (map_has_friendly_ant(p)) {
         for (dir = 1; dir <= STAY; dir *= 2) {
             p2 = neighbor(p, dir);
             if (map_has_land(p2) && !map_has_food(p2) && !grid(enemy_could_occupy, p2)) {
-                grid(directions, p) |= dir;
+                grid(moves, p) |= dir;
             }
         }
     }
@@ -67,7 +67,7 @@ void consider_available_moves_at(point p) {
     float value;
 
     if (map_has_friendly_ant(p)) {
-        switch (grid(directions, p)) {
+        switch (grid(moves, p)) {
             case NORTH:
             case EAST:
             case SOUTH:
@@ -76,7 +76,7 @@ void consider_available_moves_at(point p) {
                 break;
             default:
                 for (dir = 1; dir <= STAY; dir *= 2) {
-                    if (grid(directions, p) & dir) {
+                    if (grid(moves, p) & dir) {
                         available_move_count += 1;
                         value = move_value(p, dir);
 
@@ -101,16 +101,16 @@ void consider_available_moves_at(point p) {
 void select_move(point p, int dir);
 
 void exclude_move(point p, int dir) {
-    if (grid(directions, p) & dir) {
-        grid(directions, p) &= ~dir;
+    if (grid(moves, p) & dir) {
+        grid(moves, p) &= ~dir;
 
-        switch (grid(directions, p)) {
+        switch (grid(moves, p)) {
             case NORTH:
             case EAST:
             case SOUTH:
             case WEST:
             case STAY:
-                select_move(p, grid(directions, p));
+                select_move(p, grid(moves, p));
                 break;
         }
     }
@@ -119,7 +119,7 @@ void exclude_move(point p, int dir) {
 void select_move(point p, int dir) {
     point p2;
 
-    grid(directions, p) = dir;
+    grid(moves, p) = dir;
     p2 = neighbor(p, dir);
     if (dir != NORTH) exclude_move(neighbor(p2, SOUTH), NORTH);
     if (dir != EAST)  exclude_move(neighbor(p2, WEST),  EAST);
@@ -131,8 +131,8 @@ void select_move(point p, int dir) {
 void save_crushed_ant(point p) {
     point p2;
 
-    if (map_has_friendly_ant(p) && (grid(directions, p) == 0)) {
-        grid(directions, p) = STAY;
+    if (map_has_friendly_ant(p) && (grid(moves, p) == 0)) {
+        grid(moves, p) = STAY;
         p2 = neighbor(p, NORTH); exclude_move(p2, SOUTH); save_crushed_ant(p2);
         p2 = neighbor(p, EAST);  exclude_move(p2, WEST);  save_crushed_ant(p2);
         p2 = neighbor(p, SOUTH); exclude_move(p2, NORTH); save_crushed_ant(p2);
@@ -144,21 +144,21 @@ void resolve_short_loops(point p1) {
     point p2, p3;
 
     if (map_has_friendly_ant(p1)) {
-        if (grid(directions, p1) != STAY) {
-            p2 = neighbor(p1, grid(directions, p1));
+        if (grid(moves, p1) != STAY) {
+            p2 = neighbor(p1, grid(moves, p1));
             if (map_has_friendly_ant(p2)) {
-                p3 = neighbor(p2, grid(directions, p2));
+                p3 = neighbor(p2, grid(moves, p2));
                 if (points_equal(p1, p3)) {
-                    grid(directions, p1) = STAY;
-                    grid(directions, p2) = STAY;
+                    grid(moves, p1) = STAY;
+                    grid(moves, p2) = STAY;
                 }
             }
         }
     }
 }
 
-void directions_calculate() {
-    foreach_point(reset_directions_at);
+void moves_calculate() {
+    foreach_point(reset_moves_at);
 
     do {
         available_move_count = 0;
@@ -173,14 +173,14 @@ void directions_calculate() {
 }
 
 
-char *directions_to_string() {
+char *moves_to_string() {
     static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
     char *output = buffer;
     point p;
 
     for (p.row = 0; p.row < rows; p.row++) {
         for (p.col = 0; p.col < cols; p.col++) {
-            switch (grid(directions, p)) {
+            switch (grid(moves, p)) {
                 case NORTH:
                     *output++ = 'N';
                     break;
@@ -231,9 +231,9 @@ int main(int argc, char *argv[]) {
     aroma_stabilize();
     // puts(aroma_to_string());
     army_calculate();
-    directions_calculate();
-    // puts(directions_to_string());
-    assert(directions[0][0] == EAST);
+    moves_calculate();
+    // puts(moves_to_string());
+    assert(moves[0][0] == EAST);
 
     input = "a%...%*%\n"
             "...%...%\n"
@@ -246,10 +246,10 @@ int main(int argc, char *argv[]) {
     aroma_stabilize();
     // puts(aroma_to_string());
     army_calculate();
-    directions_calculate();
-    // puts(directions_to_string());
+    moves_calculate();
+    // puts(moves_to_string());
     
-    assert(directions[0][0] == SOUTH);
+    assert(moves[0][0] == SOUTH);
 
     // map_load_from_string(".........%\n"
     //                      ".........%\n"
@@ -275,9 +275,9 @@ int main(int argc, char *argv[]) {
     // threat_calculate();
     // mystery_reset();
     // aroma_stabilize();
-    // directions_calculate();
-    // // puts(directions_to_string());
-    // assert(strcmp(directions_to_string(), expected) == 0);
+    // moves_calculate();
+    // // puts(moves_to_string());
+    // assert(strcmp(moves_to_string(), expected) == 0);
     
     input = ".aa.........*%\n"
             ".aa...b.....*%\n"
@@ -292,12 +292,12 @@ int main(int argc, char *argv[]) {
     aroma_stabilize();
     // puts(aroma_to_string());
     army_calculate();
-    directions_calculate();
-    // puts(directions_to_string());
-    assert(directions[0][1] == EAST);
-    assert(directions[0][2] == EAST);
-    assert(directions[1][1] == EAST);
-    assert(directions[1][2] == EAST);
+    moves_calculate();
+    // puts(moves_to_string());
+    assert(moves[0][1] == EAST);
+    assert(moves[0][2] == EAST);
+    assert(moves[1][1] == EAST);
+    assert(moves[1][2] == EAST);
     
     // input = "..a...b.....*......................\n"
     //         "......b.....*......................";
@@ -311,9 +311,9 @@ int main(int argc, char *argv[]) {
     // aroma_stabilize();
     // // puts(aroma_to_string());
     // army_calculate();
-    // directions_calculate();
-    // // puts(directions_to_string());
-    // assert(strcmp(directions_to_string(), expected) == 0);
+    // moves_calculate();
+    // // puts(moves_to_string());
+    // assert(strcmp(moves_to_string(), expected) == 0);
 
     // input = "%%%%%%%%%%%%%%%%%%%\n"
     //         "%aaaaaaaaaaaaaaaa.%\n"
@@ -344,9 +344,9 @@ int main(int argc, char *argv[]) {
     // puts(aroma_to_string());
     // puts(army_aroma_to_string());
     army_calculate();
-    directions_calculate();
-    // puts(directions_to_string());
-    assert(strcmp(directions_to_string(), expected) == 0);
+    moves_calculate();
+    // puts(moves_to_string());
+    assert(strcmp(moves_to_string(), expected) == 0);
 
     input =    "aa.\n"
                "...";
@@ -363,9 +363,9 @@ int main(int argc, char *argv[]) {
     // aroma_stabilize();
     // puts(aroma_to_string());
     army_calculate();
-    directions_calculate();
-    // puts(directions_to_string());
-    assert(strcmp(directions_to_string(), expected) == 0);
+    moves_calculate();
+    // puts(moves_to_string());
+    assert(strcmp(moves_to_string(), expected) == 0);
 
     input = "%%.......\n"
             "%%.......\n"
@@ -383,12 +383,12 @@ int main(int argc, char *argv[]) {
     mystery_reset();
     aroma_stabilize();
     army_calculate();
-    directions_calculate();
-    puts(directions_to_string());
-    assert(directions[2][2] == WEST);
-    assert(directions[2][3] == WEST);
-    assert(directions[2][4] == WEST);
-    assert(directions[2][5] == WEST);
+    moves_calculate();
+    puts(moves_to_string());
+    assert(moves[2][2] == WEST);
+    assert(moves[2][3] == WEST);
+    assert(moves[2][4] == WEST);
+    assert(moves[2][5] == WEST);
 
     puts("ok");
     return 0;

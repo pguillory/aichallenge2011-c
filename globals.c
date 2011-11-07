@@ -149,12 +149,16 @@ char dir2char(int dir) {
 // }
 
 void init_log() {
+#ifdef DEBUG
     logfile = fopen("log.txt", "w");
+#endif
 }
 
 void logs(char *s) {
+#ifdef DEBUG
     fputs(s, logfile);
     fputs("\n", logfile);
+#endif
 }
 
 #ifdef UNIT_TESTS

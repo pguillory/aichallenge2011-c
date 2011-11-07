@@ -1,7 +1,7 @@
 CC=gcc
-CFLAGS=-O3 -funroll-loops -c -Wall
+CFLAGS=-O3 -funroll-loops -c -Wall -DDEBUG
 LDFLAGS=-O2 -lm
-SOURCES=MyBot.c globals.c map.c holy_ground.c army.c threat.c mystery.c aroma.c directions.c bot.c server.c handler.c
+SOURCES=globals.c map.c potential_enemy.c holy_ground.c army.c threat.c mystery.c aroma.c moves.c bot.c server.c handler.c MyBot.c
 OBJECTS=$(SOURCES:.c=.o)
 EXECUTABLE=MyBot
 

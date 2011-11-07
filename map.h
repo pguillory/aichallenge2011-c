@@ -13,7 +13,9 @@
 unsigned char map[MAX_ROWS][MAX_COLS];
 unsigned char update[MAX_ROWS][MAX_COLS];
 unsigned char owner[MAX_ROWS][MAX_COLS];
-int friendly_ant_count, visible_enemy_ant_count, potential_enemy_ant_count;
+int initial_friendly_ant_count, friendly_ant_count, visible_enemy_ant_count, food_consumed;
+int friendly_dead_ant_count, enemy_dead_ant_count;
+unsigned char visible_ally_count[MAX_ROWS][MAX_COLS];
 
 int map_is_visible(point);
 int map_has_land(point);
@@ -32,6 +34,6 @@ void map_begin_update();
 void map_finish_update();
 void map_load_from_string(char *);
 char *map_to_string();
-char *army_to_string();
+// char *army_to_string();
 
 #endif
