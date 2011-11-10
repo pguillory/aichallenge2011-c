@@ -174,7 +174,7 @@ void moves_calculate() {
 
 
 char *moves_to_string() {
-    static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
+    static char buffer[MAX_ROWS * (MAX_COLS + 1)];
     char *output = buffer;
     point p;
 

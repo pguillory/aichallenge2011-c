@@ -102,6 +102,19 @@ void read_commands_forever() {
     } while (c != EOF);
 }
 
+void default_settings() {
+    turn = 0;
+    loadtime = 3000;
+    turntime = 1000;
+    rows = MAX_ROWS;
+    cols = MAX_COLS;
+    turns = 500;
+    viewradius2 = 55;
+    attackradius2 = 5;
+    spawnradius2 = 1;
+    player_seed = 42;
+}
+
 int main(int argc, char *argv[]) {
     install_handlers();
     init_log();

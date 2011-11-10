@@ -37,7 +37,7 @@ void holy_ground_calculate() {
 }
 
 char *holy_ground_to_string() {
-    static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
+    static char buffer[MAX_ROWS * (MAX_COLS + 1)];
     char *output = buffer;
     point p;
 

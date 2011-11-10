@@ -61,8 +61,28 @@ void foreach_point_within_radius2(point p, int radius2, void (*f)(point)) {
     }
 }
 
-// void foreach_neighbor(point p, void (*f)(point)) {
+void foreach_neighbor(point p, void (*f)(point, int, point)) {
+    int dir;
 
+    for (dir = 1; dir <= STAY; dir *= 2) {
+        f(p, dir, neighbor(p, dir));
+    }
+}
+
+char *point_callback_to_string(char (*f)(point)) {
+    static char buffer[MAX_ROWS * (MAX_COLS + 1)];
+    char *output = buffer;
+    point p;
+
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            *output++ = f(p);
+        }
+        *output++ = '\n';
+    }
+    *--output = '\0';
+    return buffer;
+}
 
 int abs(int x) {
     return (x >= 0) ? x : -x;

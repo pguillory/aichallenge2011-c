@@ -1,5 +1,5 @@
-#ifndef __DIRECTIONS_H
-#define __DIRECTIONS_H
+#ifndef __MOVES_H
+#define __MOVES_H
 
 #include "globals.h"
 

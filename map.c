@@ -218,37 +218,28 @@ void map_load_from_string(char *input) {
     }
 }
 
-char *map_to_string() {
-    static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
-    char *output = buffer;
-    point p;
-    char square;
-
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            square = grid(map, p);
-            if (square & SQUARE_LAND) {
-                if (square & SQUARE_FOOD) {
-                    *output++ = '*';
-                } else if ((square & SQUARE_ANT) && (square & SQUARE_HILL)) {
-                    *output++ = 'A' + grid(owner, p);
-                } else if (square & SQUARE_ANT) {
-                    *output++ = 'a' + grid(owner, p);
-                } else if (square & SQUARE_HILL) {
-                    *output++ = '0' + grid(owner, p);
-                } else {
-                    *output++ = '.';
-                }
-            } else if (square & SQUARE_WATER) {
-                *output++ = '%';
-            } else {
-                *output++ = '?';
-            }
+char map_to_string_at(point p) {
+    if (map_has_land(p)) {
+        if (map_has_food(p)) {
+            return '*';
+        } else if (map_has_ant(p) && map_has_hill(p)) {
+            return 'A' + grid(owner, p);
+        } else if (map_has_ant(p)) {
+            return 'a' + grid(owner, p);
+        } else if (map_has_hill(p)) {
+            return '0' + grid(owner, p);
+        } else {
+            return '.';
         }
-        *output++ = '\n';
+    } else if (map_has_water(p)) {
+        return '%';
+    } else {
+        return '?';
     }
-    *--output = '\0';
-    return buffer;
+}
+
+char *map_to_string() {
+    return point_callback_to_string(map_to_string_at);
 }
 
 

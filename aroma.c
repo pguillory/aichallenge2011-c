@@ -172,7 +172,7 @@ void aroma_stabilize() {
 }
 
 char *aroma_to_string() {
-    static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
+    static char buffer[MAX_ROWS * (MAX_COLS + 1)];
     char *output = buffer;
     point p;
     char c;
@@ -209,7 +209,7 @@ char *aroma_to_string() {
 }
 
 char *army_aroma_to_string() {
-    static char buffer[MAX_ROWS * MAX_COLS + MAX_COLS];
+    static char buffer[MAX_ROWS * (MAX_COLS + 1)];
     char *output = buffer;
     point p;
     char c;

@@ -124,10 +124,11 @@ void bot_end_turn() {
 
 #ifdef DEBUG
     // dump_state();
-    fprintf(logfile, "turn %i, friendly %i (+%i), enemy %i..%i, times %i %i %i %i %i %i %i %i\n",
+    fprintf(logfile, "turn %i, friendly %i (+%i), enemy %i..%i, lost %i, killed %i, times %i %i %i %i %i %i %i %i\n",
             turn,
             friendly_ant_count, food_consumed + initial_friendly_ant_count - friendly_ant_count - friendly_dead_ant_count,
             visible_enemy_ant_count, potential_enemy_ant_count,
+            friendly_dead_ant_count, enemy_dead_ant_count,
             map_time, potential_enemy_time, holy_ground_time, threat_time, mystery_time, aroma_time, army_time, moves_time);
     fflush(logfile);
 #endif
