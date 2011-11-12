@@ -1,0 +1,476 @@
+
+    // for (i = 0; i < 21; i++) {
+    //     
+    //     if (grid(m, ps[i]) & ) {
+    //         grid(m, ps[i]) = 0;
+    //         grid(m, neighbor(ps[i]) = 0;
+    //     }
+    //     grid(m, ps[i]) = grid(moves_into, ps[i]);
+    // }
+
+    // // inner ring
+    // 
+    // if (m[0]) {
+    //     if (m[0] & STAY) {
+    //         m[6] &= ~SOUTH;
+    //         m[7] &= ~WEST;
+    //     } else if (m[0] & NORTH) {
+    //         m[5] &= ~EAST;
+    //         m[6] &= ~STAY;
+    //     } else if (m[0] & EAST) {
+    //         m[7] &= ~STAY;
+    //         m[8] &= ~NORTH;
+    //     }
+    //     m[0] = 0;
+    //     count += 1;
+    // }
+    // if (m[1]) {
+    //     if (m[1] & STAY) {
+    //         m[9] &= ~WEST;
+    //         m[10] &= ~NORTH;
+    //     } else if (m[1] & EAST) {
+    //         m[8] &= ~SOUTH;
+    //         m[9] &= ~STAY;
+    //     } else if (m[1] & EAST) {
+    //         m[10] &= ~STAY;
+    //         m[11] &= ~EAST;
+    //     }
+    //     m[1] = 0;
+    //     count += 1;
+    // }
+    // if (m[2]) {
+    //     if (m[2] & STAY) {
+    //         m[12] &= ~NORTH;
+    //         m[13] &= ~EAST;
+    //     } else if (m[2] & SOUTH) {
+    //         m[11] &= ~WEST;
+    //         m[12] &= ~STAY;
+    //     } else if (m[2] & EAST) {
+    //         m[13] &= ~STAY;
+    //         m[14] &= ~SOUTH;
+    //     }
+    //     m[2] = 0;
+    //     count += 1;
+    // }
+    // if (m[3]) {
+    //     if (m[3] & STAY) {
+    //         m[15] &= ~EAST;
+    //         m[4] &= ~SOUTH;
+    //     } else if (m[3] & WEST) {
+    //         m[14] &= ~NORTH;
+    //         m[15] &= ~STAY;
+    //     } else if (m[3] & EAST) {
+    //         m[4] &= ~STAY;
+    //         m[5] &= ~WEST;
+    //     }
+    //     m[3] = 0;
+    //     count += 1;
+    // }
+    // 
+    // if (m[5]) {
+    //     if (m[3] & STAY) {
+    //         m[15] &= ~EAST;
+    //         m[4] &= ~SOUTH;
+    //     } else if (m[3] & WEST) {
+    //         m[14] &= ~NORTH;
+    //         m[15] &= ~STAY;
+    //     } else if (m[3] & EAST) {
+    //         m[4] &= ~STAY;
+    //         m[5] &= ~WEST;
+    //     }
+    //     m[3] = 0;
+    //     count += 1;
+    // }
+  
+    // coming in from the outside
+
+    // if ((m[0] & NORTH)) {
+    //     m[0] = 0;
+    //     available[0] = 0;
+    //     count++;
+    // }
+    // if ((m[1] & NORTH) || (m[1] & EAST)) {
+    //     m[1] = 0;
+    //     available[1] = 0;
+    //     count++;
+    // }
+    // if ((m[2] & EAST) || ((m[2] & NORTH) && (m[1] & NORTH))) {
+    //     m[2] = 0;
+    //     available[2] = 0;
+    //     count++;
+    // }
+    // if (m[3] & EAST) {
+    //     m[3] = 0;
+    //     available[3] = 0;
+    //     count++;
+    // }
+    // if ((m[4] & EAST) || (m[4] & SOUTH)) {
+    //     m[4] = 0;
+    //     available[4] = 0;
+    //     count++;
+    // }
+    // if ((m[5] & SOUTH) || ((m[5] & EAST) && (m[4] & EAST))) {
+    //     m[5] = 0;
+    //     available[5] = 0;
+    //     count++;
+    // }
+    // if (m[6] & SOUTH) {
+    //     m[6] = 0;
+    //     available[6] = 0;
+    //     count++;
+    // }
+    // if ((m[7] & SOUTH) || (m[7] & WEST)) {
+    //     m[7] = 0;
+    //     available[7] = 0;
+    //     count++;
+    // }
+    // if ((m[8] & WEST) || ((m[8] & SOUTH) && (m[7] & SOUTH))) {
+    //     m[8] = 0;
+    //     available[8] = 0;
+    //     count++;
+    // }
+    // if (m[9] & WEST) {
+    //     m[9] = 0;
+    //     available[9] = 0;
+    //     count++;
+    // }
+    // if ((m[10] & WEST) || (m[10] & NORTH)) {
+    //     m[10] = 0;
+    //     available[10] = 0;
+    //     count++;
+    // }
+    // if ((m[11] & NORTH) || ((m[11] & WEST) && (m[10] & WEST))) {
+    //     m[11] = 0;
+    //     available[11] = 0;
+    //     count++;
+    // }
+    // 
+    // 
+    // // inner ring
+    // 
+    // if (m[12] & STAY) {
+    //     m[0] &= ~SOUTH;
+    //     m[12] = 0;
+    //     count++;
+    // } else if (m[12] & NORTH) {
+    //     m[11] &= ~EAST;
+    //     m[0] &= ~STAY;
+    //     m[1] &= ~WEST;
+    //     m[12] = 0;
+    //     count++;
+    // }
+    // if (m[13] & STAY) {
+    //     m[1] &= ~SOUTH;
+    //     m[2] &= ~WEST;
+    //     m[13] = 0;
+    //     count++;
+    // } else if (m[13] & NORTH) {
+    //     m[0] &= ~EAST;
+    //     m[1] &= ~STAY;
+    //     m[13] = 0;
+    //     count++;
+    // } else if (m[13] & EAST) {
+    //     m[2] &= ~STAY;
+    //     m[3] &= ~NORTH;
+    //     m[13] = 0;
+    //     count++;
+    // }
+    // if (m[14] & STAY) {
+    //     m[3] &= ~WEST;
+    //     m[14] = 0;
+    //     count++;
+    // } else if (m[14] & EAST) {
+    //     m[2] &= ~SOUTH;
+    //     m[3] &= ~STAY;
+    //     m[4] &= ~NORTH;
+    //     m[14] = 0;
+    //     count++;
+    // }
+    // if (m[15] & STAY) {
+    //     m[4] &= ~WEST;
+    //     m[5] &= ~NORTH;
+    //     m[15] = 0;
+    //     count++;
+    // } else if (m[15] & EAST) {
+    //     m[3] &= ~SOUTH;
+    //     m[4] &= ~STAY;
+    //     m[15] = 0;
+    //     count++;
+    // } else if (m[15] & SOUTH) {
+    //     m[5] &= ~STAY;
+    //     m[6] &= ~EAST;
+    //     m[15] = 0;
+    //     count++;
+    // }
+    // if (m[16] & STAY) {
+    //     m[6] &= ~NORTH;
+    //     m[16] = 0;
+    //     count++;
+    // } else if (m[16] & SOUTH) {
+    //     m[5] &= ~WEST;
+    //     m[6] &= ~STAY;
+    //     m[7] &= ~EAST;
+    //     m[16] = 0;
+    //     count++;
+    // }
+    // if (m[17] & STAY) {
+    //     m[7] &= ~NORTH;
+    //     m[8] &= ~EAST;
+    //     m[17] = 0;
+    //     count++;
+    // } else if (m[17] & SOUTH) {
+    //     m[6] &= ~WEST;
+    //     m[7] &= ~STAY;
+    //     m[17] = 0;
+    //     count++;
+    // } else if (m[17] & WEST) {
+    //     m[8] &= ~STAY;
+    //     m[9] &= ~SOUTH;
+    //     m[17] = 0;
+    //     count++;
+    // }
+    // if (m[18] & STAY) {
+    //     m[9] &= ~EAST;
+    //     m[18] = 0;
+    //     count++;
+    // } else if (m[18] & WEST) {
+    //     m[8] &= ~NORTH;
+    //     m[9] &= ~STAY;
+    //     m[10] &= ~SOUTH;
+    //     m[18] = 0;
+    //     count++;
+    // }
+    // if (m[19] & STAY) {
+    //     m[10] &= ~EAST;
+    //     m[11] &= ~SOUTH;
+    //     m[19] = 0;
+    //     count++;
+    // } else if (m[19] & WEST) {
+    //     m[9] &= ~NORTH;
+    //     m[10] &= ~STAY;
+    //     m[19] = 0;
+    //     count++;
+    // } else if (m[19] & NORTH) {
+    //     m[0] &= ~WEST;
+    //     m[11] &= ~STAY;
+    //     m[19] = 0;
+    //     count++;
+    // }
+
+
+    // point pN = neighbor(p, NORTH);
+    // point pE = neighbor(p, EAST);
+    // point pS = neighbor(p, SOUTH);
+    // point pW = neighbor(p, WEST);
+    // point pNE = neighbor(pN, EAST);
+    // point pSE = neighbor(pS, EAST);
+    // point pSW = neighbor(pS, WEST);
+    // point pNW = neighbor(pN, WEST);
+    // point pNN = neighbor(pN, NORTH);
+    // point pEE = neighbor(pE, EAST);
+    // point pSS = neighbor(pS, SOUTH);
+    // point pWW = neighbor(pW, WEST);
+    // point pNNE = neighbor(pNN, EAST);
+    // point pSSE = neighbor(pSS, EAST);
+    // point pSSW = neighbor(pSS, WEST);
+    // point pNNW = neighbor(pNN, WEST);
+    // point pNEE = neighbor(pNE, EAST);
+    // point pSEE = neighbor(pSE, EAST);
+    // point pSWW = neighbor(pSW, WEST);
+    // point pNWW = neighbor(pNW, WEST);
+
+
+
+// void add_support_at(point p) {
+//     int i;
+//     point p2;
+// 
+//     for (i = 0; i < 5; i++) {
+//         if (grid(directional_threat, p)[i] > 0) {
+//             grid(directional_support, p)[i] += 1;
+//             p2 = neighbor(p, NORTH);   grid(directional_support, p2)[i] += 1;
+//             p2 = neighbor(p2, EAST);   grid(directional_support, p2)[i] += 1;
+//             p2 = neighbor(p, EAST);    grid(directional_support, p2)[i] += 1;
+//             p2 = neighbor(p2, SOUTH);  grid(directional_support, p2)[i] += 1;
+//             p2 = neighbor(p, SOUTH);   grid(directional_support, p2)[i] += 1;
+//             p2 = neighbor(p2, WEST);   grid(directional_support, p2)[i] += 1;
+//             p2 = neighbor(p, WEST);    grid(directional_support, p2)[i] += 1;
+//             p2 = neighbor(p2, NORTH);  grid(directional_support, p2)[i] += 1;
+//         }
+//     }
+// }
+// 
+// void add_support_for_single_moves_at(point p) {
+//     int dir = grid(attack_moves, p);
+// 
+//     switch (dir) {
+//         case NORTH:
+//         case EAST:
+//         case SOUTH:
+//         case WEST:
+//         case STAY:
+//             add_support_at(p);
+//             break;
+//     }
+// }
+// 
+// void add_support_for_single_moves() {
+//     foreach_point(add_support_for_single_moves_at);
+// }
+
+
+
+        // if (grid(local_moves, p2) & STAY) {
+        //     grid(local_moves, p2) = 0;
+        //     grid(local_moves, neighbor(p2, NORTH)) &= ~SOUTH;
+        //     grid(local_moves, neighbor(p2, EAST)) &= ~WEST;
+        //     grid(local_moves, neighbor(p2, SOUTH)) &= ~NORTH;
+        //     grid(local_moves, neighbor(p2, WEST)) &= ~EAST;
+        //     count += 2;
+        // } else {
+        //     for (dir = 1; dir < STAY; dir *= 2) {
+
+
+
+    // memset(directional_threat, 0, sizeof(directional_threat));
+    // memset(directional_support, 0, sizeof(directional_support));
+
+
+
+// unsigned char directional_threat[MAX_ROWS][MAX_COLS][5];
+// unsigned char directional_support[MAX_ROWS][MAX_COLS][5];
+
+// int considered_direction;
+
+// #define directional_threat_at(p, dir) grid(directional_threat, p)[dir2index(dir)]
+// #define directional_support_at(p, dir) grid(directional_support, p)[dir2index(dir)]
+
+// int dir2index(int dir) {
+//     switch (dir) {
+//         case NORTH:
+//             return 0;
+//         case SOUTH:
+//             return 1;
+//         case EAST:
+//             return 2;
+//         case WEST:
+//             return 3;
+//         case STAY:
+//             return 4;
+//     }
+//     assert(0);
+// }
+
+// void accumulate_directional_threat_at(point p) {
+//     directional_threat_at(p, considered_direction) += 1;
+// }
+// 
+// void accumulate_directional_threat_around(point p, int dir, point p2) {
+//     if (map_has_land(p2)) {
+//         considered_direction = dir;
+//         foreach_point_within_radius2(p2, attackradius2, accumulate_directional_threat_at);
+//     }
+// }
+
+
+
+// void prune_outnumbered_moves_at(point p) {
+//     point p2;
+//     int i;
+//     int dir;
+// 
+//     for (dir = 1; dir <= STAY; dir *= 2) {
+//         if (grid(attack_moves, p) & dir) {
+//             p2 = neighbor(p, dir);
+//             for (i = 0; i < 5; i++) {
+//                 if (grid(directional_support, p2)[i] <= grid(directional_threat, p2)[i]) {
+//                     grid(attack_moves, p) = 0;
+//                     break;
+//                 }
+//             }
+//             break;
+//         }
+//     }
+// }
+// 
+// void prune_outnumbered_moves() {
+//     foreach_point(prune_outnumbered_moves_at);
+// }
+
+
+
+
+void calculate_enemy_focus_at(point p) {
+    printf("calculate_enemy_focus_at(%i:%i)\n", p.row, p.col);
+    static bytegrid local_moves;
+    memcpy(local_moves, moves, sizeof(local_moves));
+
+    int i, j;
+    point p2, p3;
+    int dir, dirs[5];
+    move move;
+    int count = 0;
+
+    for (i = 0; i < 21; i++) {
+        move = spiral_pattern[i];
+        p2 = add_points(p, move.point);
+        dirs[0] = STAY;
+        dirs[1] = move.dir;
+        dirs[2] = right(move.dir);
+        dirs[3] = left(move.dir);
+        dirs[4] = backward(move.dir);
+        for (j = 0; j < 5; j++) {
+            dir = dirs[j];
+            p3 = neighbor(p2, dir);
+            if (grid(local_moves, p3) & backward(dir)) {
+                grid(local_moves, p3) = 0;
+                grid(local_moves, neighbor(p3, NORTH)) &= ~SOUTH;
+                grid(local_moves, neighbor(p3, EAST)) &= ~WEST;
+                grid(local_moves, neighbor(p3, SOUTH)) &= ~NORTH;
+                grid(local_moves, neighbor(p3, WEST)) &= ~EAST;
+                count += 1;
+                break;
+            }
+        }
+    }
+
+    grid(enemy_focus, p) = count;
+}
+
+
+
+
+
+
+
+
+
+
+    puts(attack_moves_to_string());
+    puts(focus_to_string());
+    puts(max_focus_to_string());
+    assert(0 == strcmp(focus_to_string(), ".0...0.....\n"
+                                          "001.100....\n"
+                                          ".0...0.....\n"
+                                          "...........\n"
+                                          "..........."));
+
+
+
+
+// void reset_moves_at(point p) {
+//     int dir;
+//     point p2;
+// 
+//     grid(moves, p) = 0;
+// 
+//     if (map_has_friendly_ant(p)) {
+//         for (dir = 1; dir <= STAY; dir *= 2) {
+//             p2 = neighbor(p, dir);
+//             if (map_has_land(p2) && !map_has_food(p2) && !grid(enemy_could_occupy, p2)) {
+//                 grid(moves, p) |= dir;
+//             }
+//         }
+//     }
+// }
+

@@ -22,8 +22,8 @@ void reset_threat_at(point p) {
     //         grid(threat, p) += 1;
     //     }
     // }
-    grid(enemy_could_occupy, p) = 0;
-    grid(enemy_can_attack, p) = 0;
+    // grid(enemy_could_occupy, p) = 0;
+    // grid(enemy_can_attack, p) = 0;
     grid(enemy_could_attack, p) = 0;
 }
 
@@ -36,14 +36,14 @@ void add_threat_for_each_enemy_that_could_attack(point p) {
     int rows_scanned, cols_scanned;
 
     if (map_has_enemy_ant(p)) {
-        grid(enemy_could_occupy, p) = 1;
+        // grid(enemy_could_occupy, p) = 1;
 
         for (d.row = -attackradius, rows_scanned = 0; d.row <= attackradius && rows_scanned < rows; d.row++, rows_scanned++) {
             for (d.col = -attackradius, cols_scanned = 0; d.col <= attackradius && cols_scanned < cols; d.col++, cols_scanned++) {
                 p2 = add_points(p, d);
 
                 if (distance2(p, p2) <= attackradius2) {
-                    grid(enemy_can_attack, p2) = 1;
+                    // grid(enemy_can_attack, p2) = 1;
                     grid(enemy_could_attack, p2) = 1;
                 }
 
@@ -51,7 +51,7 @@ void add_threat_for_each_enemy_that_could_attack(point p) {
                     pp = neighbor(p, dir);
 
                     if (map_has_land(pp) && !map_has_food(pp)) {
-                        grid(enemy_could_occupy, pp) = 1;
+                        // grid(enemy_could_occupy, pp) = 1;
                         if (distance2(pp, p2) <= attackradius2) {
                             grid(threat, p2) += 1;
                             grid(enemy_could_attack, p2) += 1;
@@ -220,7 +220,9 @@ void threat_calculate() {
 char threat_to_string_at(point p) {
     if (map_has_land(p)) {
         if (grid(enemy_could_attack, p)) {
-            if (grid(threat, p) < 10) {
+            if (grid(threat, p) < 0) {
+                return '-';
+            } else if (grid(threat, p) < 10) {
                 return '0' + grid(threat, p);
             } else {
                 return '+';

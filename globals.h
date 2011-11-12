@@ -6,6 +6,12 @@ typedef struct
     int row, col;
 } point;
 
+typedef struct
+{
+    point point;
+    int dir;
+} move;
+
 #define grid(g, p) g[p.row][p.col]
 
 #define NORTH 1
@@ -14,8 +20,12 @@ typedef struct
 #define WEST  8
 #define STAY 16
 
+#define MAX_PLAYERS 10
 #define MAX_ROWS 200
 #define MAX_COLS 200
+
+typedef unsigned char byte;
+typedef byte bytegrid[MAX_ROWS][MAX_COLS];
 
 int turn;           /* = 0 */
 int loadtime;       /* = 3000 */
@@ -40,6 +50,9 @@ void foreach_neighbor(point p, void (*)(point, int, point));
 char *point_callback_to_string(char (*)(point));
 int distance2(point, point);
 point neighbor(point, char direction);
+int left(int dir);
+int right(int dir);
+int backward(int dir);
 char dir2char(int dir);
 
 #include <stdio.h>

@@ -12,20 +12,6 @@
 #include "server.h"
 #include "bot.h"
 
-void dump_state() {
-    // logs("map:");
-    logs(map_to_string());
-    // logs("holy ground:");
-    // logs(holy_ground_to_string());
-    // logs("threat:");
-    // logs(threat_to_string());
-    // // logs(mystery_to_string());
-    // logs("aroma:");
-    // logs(aroma_to_string());
-    // logs("moves:");
-    // logs(moves_to_string());
-}
-
 void bot_init() {
     map_reset();
     potential_enemy_reset();
@@ -66,7 +52,7 @@ void bot_see_dead_ant(point p, int player) {
 
 void issue_order_at(point p) {
     if (map_has_friendly_ant(p)) {
-        switch (grid(moves, p)) {
+        switch (grid(moves[0], p)) {
             case NORTH:
                 server_order(p, 'N');
                 break;
@@ -123,7 +109,15 @@ void bot_end_turn() {
     server_go();
 
 #ifdef DEBUG
-    // dump_state();
+    fprintf(logfile, "holy ground:\n%s\n", holy_ground_to_string());
+    fprintf(logfile, "threat:\n%s\n", threat_to_string());
+    // fprintf(logfile, "mystery:\n%s\n", mystery_to_string());
+    fprintf(logfile, "aroma:\n%s\n", aroma_to_string());
+    fprintf(logfile, "focus:\n%s\n", focus_to_string());
+    fprintf(logfile, "max focus:\n%s\n", max_focus_to_string());
+    fprintf(logfile, "moves:\n%s\n", attack_moves_to_string());
+    fprintf(logfile, "map:\n%s\n", map_to_string());
+
     fprintf(logfile, "turn %i, friendly %i (+%i), enemy %i..%i, lost %i, killed %i, times %i %i %i %i %i %i %i %i\n",
             turn,
             friendly_ant_count, food_consumed + initial_friendly_ant_count - friendly_ant_count - friendly_dead_ant_count,

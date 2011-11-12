@@ -1,11 +1,13 @@
-#ifndef __MOVES_H
-#define __MOVES_H
+#ifndef __ATTACK_MOVES_H
+#define __ATTACK_MOVES_H
 
 #include "globals.h"
 
-char moves[MAX_ROWS][MAX_COLS];
+bytegrid moves[2];
 
 void moves_calculate();
-char *moves_to_string();
+char *attack_moves_to_string();
+char *focus_to_string();
+char *max_focus_to_string();
 
 #endif

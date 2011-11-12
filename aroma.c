@@ -180,25 +180,35 @@ char *aroma_to_string() {
 
     for (p.row = 0; p.row < rows; p.row++) {
         for (p.col = 0; p.col < cols; p.col++) {
-            v = grid(aroma, p);
-            if (v <= 0) c = '-';
-            else if (v < 1) c = '0';
-            else if (v < 2) c = '1';
-            else if (v < 4) c = '2';
-            else if (v < 8) c = '3';
-            else if (v < 16) c = '4';
-            else if (v < 32) c = '5';
-            else if (v < 64) c = '6';
-            else if (v < 128) c = '7';
-            else if (v < 256) c = '8';
-            else if (v < 512) c = '9';
-            else if (v < 1024) c = 'a';
-            else if (v < 2048) c = 'b';
-            else if (v < 4096) c = 'c';
-            else if (v < 8192) c = 'd';
-            else if (v < 16384) c = 'e';
-            else if (v < 32768) c = 'f';
-            else c = '+';
+            if (map_has_water(p)) {
+                c = '%';
+            } else if (map_has_land(p)) {
+                if (map_has_food(p)) {
+                    c = '*';
+                } else {
+                    v = grid(aroma, p);
+                    if (v <= 0) c = '-';
+                    else if (v < 1) c = '0';
+                    else if (v < 2) c = '1';
+                    else if (v < 4) c = '2';
+                    else if (v < 8) c = '3';
+                    else if (v < 16) c = '4';
+                    else if (v < 32) c = '5';
+                    else if (v < 64) c = '6';
+                    else if (v < 128) c = '7';
+                    else if (v < 256) c = '8';
+                    else if (v < 512) c = '9';
+                    else if (v < 1024) c = 'a';
+                    else if (v < 2048) c = 'b';
+                    else if (v < 4096) c = 'c';
+                    else if (v < 8192) c = 'd';
+                    else if (v < 16384) c = 'e';
+                    else if (v < 32768) c = 'f';
+                    else c = '+';
+                }
+            } else {
+                c = '?';
+            }
 
             *output++ = c;
         }

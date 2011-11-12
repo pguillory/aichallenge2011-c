@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <math.h>
 #include <time.h>
+#include <unistd.h>
 #include "globals.h"
 
 long int now() {
@@ -142,6 +143,50 @@ point neighbor(point p, char dir) {
     assert(0);
 }
 
+int left(int dir) {
+    switch (dir) {
+        case NORTH:
+            return WEST;
+        case SOUTH:
+            return EAST;
+        case EAST:
+            return NORTH;
+        case WEST:
+            return SOUTH;
+    }
+    assert(0);
+}
+
+int right(int dir) {
+    switch (dir) {
+        case NORTH:
+            return EAST;
+        case SOUTH:
+            return WEST;
+        case EAST:
+            return SOUTH;
+        case WEST:
+            return NORTH;
+    }
+    assert(0);
+}
+
+int backward(int dir) {
+    switch (dir) {
+        case NORTH:
+            return SOUTH;
+        case SOUTH:
+            return NORTH;
+        case EAST:
+            return WEST;
+        case WEST:
+            return EAST;
+        case STAY:
+            return STAY;
+    }
+    assert(0);
+}
+
 char dir2char(int dir) {
     switch (dir) {
         case NORTH:
@@ -170,14 +215,19 @@ char dir2char(int dir) {
 
 void init_log() {
 #ifdef DEBUG
-    logfile = fopen("log.txt", "w");
+    time_t rawtime = time(0);
+    struct tm *timeinfo = localtime(&rawtime);
+
+    char filename[256], timestamp[256];
+    strftime(timestamp, 256, "%Y-%m-%d_%H:%M:%S", timeinfo);
+    sprintf(filename, "logs/game.%s.%i.log", timestamp, getpid());
+    logfile = fopen(filename, "w");
 #endif
 }
 
 void logs(char *s) {
 #ifdef DEBUG
-    fputs(s, logfile);
-    fputs("\n", logfile);
+    fprintf(logfile, "%s\n", s);
 #endif
 }
 
