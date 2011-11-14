@@ -31,9 +31,14 @@ int map_has_friendly_hill(point);
 int map_has_enemy_hill(point);
 void map_reset();
 void map_begin_update();
+void map_see_water(point);
+void map_see_food(point);
+void map_see_ant(point, int player);
+void map_see_hill(point, int player);
 void map_finish_update();
 void map_load_from_string(char *);
 char *map_to_string();
+char *map_to_color_string();
 // char *army_to_string();
 
 #endif

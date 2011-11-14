@@ -162,8 +162,8 @@ void adjust_max_focus(point p) {
     // (grid(visible_ally_count, p) < 20)
 
 
-    if (grid(holy_ground, p) ||
-        (friendly_ant_count > potential_enemy_ant_count / 10) ||
+    if ((grid(holy_ground, p) < 5) ||
+        // (friendly_ant_count > potential_enemy_ant_count / 10) ||
         (grid(visible_ally_count, p) > 15)
     ) {
         grid(max_focus, p) += 1;
@@ -392,6 +392,8 @@ void resolve_short_loops(point p1) {
 void moves_calculate() {
     reset();
 
+    calculate_focus();
+    prune_outnumbered_moves();
     calculate_focus();
     prune_outnumbered_moves();
     calculate_focus();

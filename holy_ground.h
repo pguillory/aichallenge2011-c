@@ -3,9 +3,9 @@
 
 #include "globals.h"
 
-#define HOLY_GROUND_RANGE 13
+#define MAX_HOLY_GROUND 100
 
-unsigned char holy_ground[MAX_ROWS][MAX_COLS];
+bytegrid holy_ground;
 
 void holy_ground_calculate();
 char *holy_ground_to_string();

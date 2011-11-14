@@ -25,21 +25,25 @@ void bot_begin_turn() {
 }
 
 void bot_see_water(point p) {
-    grid(update, p) |= SQUARE_WATER;
+    map_see_water(p);
+    // grid(update, p) |= SQUARE_WATER;
 }
 
 void bot_see_food(point p) {
-    grid(update, p) |= SQUARE_FOOD;
+    map_see_food(p);
+    // grid(update, p) |= SQUARE_FOOD;
 }
 
 void bot_see_ant(point p, int player) {
-    grid(update, p) |= SQUARE_ANT;
-    grid(owner, p) = player;
+    map_see_ant(p, player);
+    // grid(update, p) |= SQUARE_ANT;
+    // grid(owner, p) = player;
 }
 
 void bot_see_hill(point p, int player) {
-    grid(update, p) |= SQUARE_HILL;
-    grid(owner, p) = player;
+    map_see_hill(p, player);
+    // grid(update, p) |= SQUARE_HILL;
+    // grid(owner, p) = player;
 }
 
 void bot_see_dead_ant(point p, int player) {
@@ -109,14 +113,14 @@ void bot_end_turn() {
     server_go();
 
 #ifdef DEBUG
-    fprintf(logfile, "holy ground:\n%s\n", holy_ground_to_string());
-    fprintf(logfile, "threat:\n%s\n", threat_to_string());
-    // fprintf(logfile, "mystery:\n%s\n", mystery_to_string());
-    fprintf(logfile, "aroma:\n%s\n", aroma_to_string());
-    fprintf(logfile, "focus:\n%s\n", focus_to_string());
-    fprintf(logfile, "max focus:\n%s\n", max_focus_to_string());
-    fprintf(logfile, "moves:\n%s\n", attack_moves_to_string());
-    fprintf(logfile, "map:\n%s\n", map_to_string());
+    // fprintf(logfile, "holy ground:\n%s\n", holy_ground_to_string());
+    // fprintf(logfile, "threat:\n%s\n", threat_to_string());
+    // // fprintf(logfile, "mystery:\n%s\n", mystery_to_string());
+    // fprintf(logfile, "aroma:\n%s\n", aroma_to_string());
+    // fprintf(logfile, "focus:\n%s\n", focus_to_string());
+    // fprintf(logfile, "max focus:\n%s\n", max_focus_to_string());
+    // fprintf(logfile, "moves:\n%s\n", attack_moves_to_string());
+    fprintf(logfile, "map:\n%s\033[0m\n", map_to_color_string());
 
     fprintf(logfile, "turn %i, friendly %i (+%i), enemy %i..%i, lost %i, killed %i, times %i %i %i %i %i %i %i %i\n",
             turn,

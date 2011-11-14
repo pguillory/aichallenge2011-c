@@ -1,0 +1,8 @@
+[0;31mRed
+[1;31mRed (bold)
+[0;31;100mRed
+[1;31;100mRed (bold)
+[0;31;40mRed
+[1;31;40mRed (bold)
+[0;31;107mRed
+[1;31;107mRed (bold)

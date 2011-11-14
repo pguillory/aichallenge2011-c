@@ -2,6 +2,7 @@
 #include <math.h>
 #include <time.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include "globals.h"
 
 long int now() {
@@ -222,6 +223,9 @@ void init_log() {
     strftime(timestamp, 256, "%Y-%m-%d_%H:%M:%S", timeinfo);
     sprintf(filename, "logs/game.%s.%i.log", timestamp, getpid());
     logfile = fopen(filename, "w");
+    
+    char *write_buffer = malloc(10 * 1024 * 1024);
+    setbuffer(logfile, write_buffer, sizeof(write_buffer));
 #endif
 }
 

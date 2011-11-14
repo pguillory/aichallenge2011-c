@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     assert(potential_enemy_ant_count == 23);
 
     // map_begin_update();
-    // map_update_ant((point){0, 0}, 1);
+    // map_see_ant((point){0, 0}, 1);
     // grid(update, p) |= SQUARE_ANT;
     // grid(owner, p) = 1;
     // map_finish_update();

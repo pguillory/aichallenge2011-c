@@ -18,7 +18,7 @@ void iterate_mystery_at(point p) {
     if (map_is_visible(p)) {
         grid(mystery, p) = 0;
     } else {
-        if ((grid(holy_ground, p) == 0) && (grid(mystery, p) < MYSTERY_MAX)) {
+        if ((grid(holy_ground, p) > 15) && (grid(mystery, p) < MYSTERY_MAX)) {
             grid(mystery, p) += 1;
         }
     }

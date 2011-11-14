@@ -85,6 +85,24 @@ void map_begin_update() {
     foreach_point(map_begin_update_at);
 }
 
+void map_see_water(point p) {
+    grid(update, p) |= SQUARE_WATER;
+}
+
+void map_see_food(point p) {
+    grid(update, p) |= SQUARE_FOOD;
+}
+
+void map_see_ant(point p, int player) {
+    grid(update, p) |= SQUARE_ANT;
+    grid(owner, p) = player;
+}
+
+void map_see_hill(point p, int player) {
+    grid(update, p) |= SQUARE_HILL;
+    grid(owner, p) = player;
+}
+
 void carry_over_persistent_bits(point p) {
     grid(map, p) &= SQUARE_LAND | SQUARE_WATER | SQUARE_FOOD | SQUARE_HILL;
 }
@@ -242,6 +260,85 @@ char *map_to_string() {
     return point_callback_to_string(map_to_string_at);
 }
 
+#define BLACK   0
+#define RED     1
+#define GREEN   2
+#define YELLOW  3
+#define BLUE    4
+#define MAGENTA 5
+#define CYAN    6
+#define WHITE   7
+
+#define HIGH_INTENSITY 60
+
+typedef struct
+{
+    char c;
+    int foreground, background;
+} char_with_color;
+
+char_with_color map_to_color_string_at(point p) {
+    int background = map_is_visible(p) ? BLACK : HIGH_INTENSITY + BLACK;
+    if (map_has_land(p)) {
+        if (map_has_food(p)) {
+            return (char_with_color) {'*', YELLOW, background};
+        } else if (map_has_ant(p) && map_has_hill(p)) {
+            return (char_with_color) {'A' + grid(owner, p), map_is_friendly(p) ? HIGH_INTENSITY + GREEN : RED, background};
+        } else if (map_has_ant(p)) {
+            return (char_with_color) {'a' + grid(owner, p), map_is_friendly(p) ? GREEN : RED, background};
+        } else if (map_has_hill(p)) {
+            return (char_with_color) {'0' + grid(owner, p), map_is_friendly(p) ? HIGH_INTENSITY + GREEN : RED, background};
+        } else {
+            return (char_with_color) {'.', HIGH_INTENSITY + BLACK, background};
+        }
+    } else if (map_has_water(p)) {
+        return (char_with_color) {'%', BLUE, background};
+    } else {
+        return (char_with_color) {'?', WHITE, background};
+    }
+}
+
+char *point_callback_to_color_string(char_with_color (*f)(point)) {
+    static char buffer[MAX_ROWS * MAX_COLS * 10 + MAX_ROWS];
+    char word[20];
+    char *output = buffer;
+    point p;
+    char_with_color cc;
+
+    int foreground = -1;
+    int background = -1;
+
+    for (p.row = 0; p.row < rows; p.row++) {
+        for (p.col = 0; p.col < cols; p.col++) {
+            cc = f(p);
+            if (foreground != cc.foreground && background != cc.background) {
+                foreground = cc.foreground;
+                background = cc.background;
+                sprintf(word, "%c[%i;%im", 27, cc.foreground + 30, cc.background + 40);
+                strcpy(output, word);
+                output += strlen(word);
+            } else if (foreground != cc.foreground) {
+                foreground = cc.foreground;
+                sprintf(word, "%c[%im", 27, cc.foreground + 30);
+                strcpy(output, word);
+                output += strlen(word);
+            } else if (background != cc.background) {
+                background = cc.background;
+                sprintf(word, "%c[%im", 27, cc.background + 40);
+                strcpy(output, word);
+                output += strlen(word);
+            }
+            *output++ = cc.c;
+        }
+        *output++ = '\n';
+    }
+    *--output = '\0';
+    return buffer;
+}
+
+char *map_to_color_string() {
+    return point_callback_to_color_string(map_to_color_string_at);
+}
 
 #ifdef UNIT_TESTS
 #undef UNIT_TESTS

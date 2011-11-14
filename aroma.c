@@ -8,17 +8,14 @@
 
 #define AROMA_NATURAL_DISSIPATION  0.95
 #define AROMA_ANT_DISSIPATION      0.0
-#define AROMA_ARMY_ANT_DISSIPATION 0.05
+#define AROMA_ARMY_ANT_DISSIPATION 0.1
 
 #define AROMA_FOOD               100.0
 #define AROMA_ENEMY                5.0
 #define AROMA_INTRUDER           200.0
 #define AROMA_ENEMY_HILL         500.0
 #define AROMA_MYSTERY             10.0
-#define AROMA_CONFLICT             0.0
-#define AROMA_CONFLICT_FRONT      20.0
-#define AROMA_CONFLICT_SIDE        0.0
-#define AROMA_CONFLICT_REAR        0.0
+#define AROMA_CONFLICT            20.0
 
 void reset_aroma_at(point p) {
     grid(aroma, p) = 0.0;
@@ -33,6 +30,9 @@ void dissipate_aroma(point p) {
     if (map_has_friendly_ant(p)) {
         grid(aroma, p) *= AROMA_ANT_DISSIPATION;
         grid(army_aroma, p) *= AROMA_ARMY_ANT_DISSIPATION;
+    } else if (map_has_friendly_hill(p)) {
+        grid(aroma, p) = 0;
+        grid(army_aroma, p) = 0;
     } else {
         grid(aroma, p) *= AROMA_NATURAL_DISSIPATION;
         grid(army_aroma, p) *= AROMA_NATURAL_DISSIPATION;
@@ -57,9 +57,9 @@ void calculate_channels_at(point p) {
         add_channel(p, &grid(aroma1, p));
         for (dir = 1; dir < STAY; dir *= 2) {
             p2 = neighbor(p, dir);
-            if (!map_has_water(p2)) {
+            // if (!map_has_water(p2)) {
                 add_channel(p, &grid(aroma1, p2));
-            }
+            // }
         }
     }
 }
@@ -112,7 +112,7 @@ void add_aroma(point p) {
 
     if (map_has_ant(p)) {
         if (map_is_enemy(p)) {
-            if (grid(holy_ground, p)) {
+            if (grid(holy_ground, p) < 15) {
                 grid(aroma, p) += AROMA_INTRUDER;
                 grid(army_aroma, p) += AROMA_INTRUDER;
             } else {
@@ -126,9 +126,8 @@ void add_aroma(point p) {
                     if (map_has_land(p2) &&
                         (grid(enemy_could_attack, p2) > grid(enemy_could_attack, p))
                     ) {
-                        // grid(aroma, p) += AROMA_CONFLICT;
-                        grid(aroma, p2) += AROMA_CONFLICT_FRONT;
-                        grid(army_aroma, p2) += AROMA_CONFLICT_FRONT;
+                        grid(aroma, p2) += AROMA_CONFLICT;
+                        grid(army_aroma, p2) += AROMA_CONFLICT;
                     }
                 }
             }
@@ -337,23 +336,23 @@ int main(int argc, char *argv[]) {
     assert(aroma[0][0] == AROMA_FOOD);
     assert(aroma[0][1] == AROMA_ENEMY_HILL);
 
-    map_load_from_string("0...........bb............................");
+    map_load_from_string("0.............bb............................");
     holy_ground_calculate();
     threat_calculate();
     mystery_reset();
     aroma_reset();
     aroma_iterate(1);
     // puts(aroma_to_string());
-    assert(HOLY_GROUND_RANGE == 12);
+    // puts(army_aroma_to_string());
     // printf("%f %f %f %f\n", aroma[0][11], aroma[0][12], aroma[0][13], aroma[0][14]);
-    assert(aroma[0][11] == 0.0);
-    assert(aroma[0][12] == AROMA_INTRUDER);
-    // assert(aroma[0][13] == AROMA_ENEMY);
-    assert(aroma[0][14] == 0.0);
-    assert(army_aroma[0][11] == 0.0);
-    assert(army_aroma[0][12] == AROMA_INTRUDER);
-    // assert(army_aroma[0][13] == AROMA_ENEMY);
-    assert(army_aroma[0][14] == 0.0);
+    assert(aroma[0][13] == 0.0);
+    assert(aroma[0][14] == AROMA_INTRUDER);
+    assert(aroma[0][15] == 0.0);
+    assert(aroma[0][16] == 0.0);
+    assert(army_aroma[0][13] == 0.0);
+    assert(army_aroma[0][14] == AROMA_INTRUDER);
+    assert(army_aroma[0][15] == AROMA_ENEMY);
+    assert(army_aroma[0][16] == 0.0);
 
     map_load_from_string("?.");
     holy_ground_calculate();
@@ -380,9 +379,7 @@ int main(int argc, char *argv[]) {
                          "..................\n"
                          "..................\n"
                          "..................");
-    // puts(map_to_string());
     holy_ground_calculate();
-    // puts(holy_ground_to_string());
     threat_calculate();
     mystery_reset();
     aroma_reset();
@@ -390,11 +387,46 @@ int main(int argc, char *argv[]) {
     // puts(aroma_to_string());
     // puts(army_aroma_to_string());
     // printf("%f %f %f %f %f\n", aroma[4][2], aroma[4][3], aroma[5][2], aroma[3][2], aroma[4][1]);
-    assert(aroma[4][2] == AROMA_CONFLICT);
-    // assert(aroma[4][3] == AROMA_CONFLICT_FRONT);
-    // assert(aroma[5][2] == AROMA_CONFLICT_SIDE);
-    // assert(aroma[3][2] == AROMA_CONFLICT_SIDE);
-    // assert(aroma[4][1] == AROMA_CONFLICT_REAR);
+    assert(aroma[4][3] == 0);
+
+    // map_load_from_string("..................\n"
+    //                      "aa................\n"
+    //                      "..................\n"
+    //                      "..................\n"
+    //                      "..a...b...........\n"
+    //                      "..................\n"
+    //                      "..................\n"
+    //                      "..................\n"
+    //                      "..................\n"
+    //                      "..................\n"
+    //                      "..................");
+    rows = 20;
+    cols = 50;
+    map_reset();
+    map_begin_update();
+    map_see_ant((point){5, 0}, 0);
+    map_see_ant((point){5, 4}, 1);
+    map_finish_update();
+    holy_ground_calculate();
+    threat_calculate();
+    mystery_reset();
+    aroma_reset();
+    aroma_iterate(1);
+    // printf("%f %f %f %f %f\n", aroma[4][2], aroma[4][3], aroma[5][2], aroma[3][2], aroma[4][1]);
+    assert(aroma[5][1] == 0);
+
+    map_begin_update();
+    map_see_ant((point){0, 0}, 0);
+    map_see_ant((point){0, 1}, 0);
+    map_see_ant((point){5, 0}, 0);
+    map_see_ant((point){5, 4}, 1);
+    map_finish_update();
+    holy_ground_calculate();
+    threat_calculate();
+    mystery_reset();
+    aroma_reset();
+    aroma_iterate(1);
+    assert(aroma[5][1] == AROMA_CONFLICT);
 
     puts("ok");
     return 0;

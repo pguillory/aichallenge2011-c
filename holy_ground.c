@@ -3,65 +3,63 @@
 #include "map.h"
 #include "holy_ground.h"
 
-unsigned char holy_ground2[MAX_ROWS][MAX_COLS];
+bytegrid holy_ground2;
 
-void reset_holy_ground_at_point(point p) {
-    grid(holy_ground, p) = map_has_friendly_hill(p);
+void reset_at_point(point p) {
+    grid(holy_ground, p) = map_has_friendly_hill(p) ? 0 : MAX_HOLY_GROUND;
 }
 
-void spread_holy_ground_at_point(point p) {
+void spread_at_point(point p) {
     int dir;
     point p2;
+
     if (map_has_land(p)) {
         grid(holy_ground2, p) = grid(holy_ground, p);
         for (dir = 1; dir < STAY; dir *= 2) {
             p2 = neighbor(p, dir);
-            grid(holy_ground2, p) |= grid(holy_ground, p2);
+            if (grid(holy_ground, p) > grid(holy_ground, p2)) {
+                grid(holy_ground2, p) = grid(holy_ground, p2) + 1;
+                break;
+            }
         }
     } else {
-        grid(holy_ground2, p) = 0;
+        grid(holy_ground2, p) = MAX_HOLY_GROUND;
     }
 }
 
 void holy_ground_calculate() {
     int i;
     
-    foreach_point(reset_holy_ground_at_point);
+    foreach_point(reset_at_point);
 
-    for (i = 0; i < HOLY_GROUND_RANGE; i++) {
-        foreach_point(spread_holy_ground_at_point);
+    for (i = 0; i < 20; i++) {
+        foreach_point(spread_at_point);
 
         assert(sizeof(holy_ground) == sizeof(holy_ground2));
         memcpy(holy_ground, holy_ground2, sizeof(holy_ground));
     }
 }
 
-char *holy_ground_to_string() {
-    static char buffer[MAX_ROWS * (MAX_COLS + 1)];
-    char *output = buffer;
-    point p;
-
-    for (p.row = 0; p.row < rows; p.row++) {
-        for (p.col = 0; p.col < cols; p.col++) {
-            if (map_has_land(p)) {
-                if (map_has_hill(p)) {
-                    *output++ = '0' + grid(owner, p);
-                } else if (grid(holy_ground, p)) {
-                    *output++ = ',';
-                } else {
-                    *output++ = '.';
-                }
-            } else if (map_has_water(p)) {
-                *output++ = '%';
-            } else {
-                *output++ = '?';
-            }
+char holy_ground_to_string_at(point p) {
+    if (map_has_land(p)) {
+        if (grid(holy_ground, p) < 10) {
+            return '0' + grid(holy_ground, p);
+        } else if (grid(holy_ground, p) < 16) {
+            return 'a' + grid(holy_ground, p) - 10;
+        } else {
+            return '.';
         }
-        *output++ = '\n';
+    } else if (map_has_water(p)) {
+        return '%';
+    } else {
+        return '?';
     }
-    *--output = '\0';
-    return buffer;
 }
+
+char *holy_ground_to_string() {
+    return point_callback_to_string(holy_ground_to_string_at);
+}
+
 
 #ifdef UNIT_TESTS
 #undef UNIT_TESTS
@@ -84,97 +82,53 @@ int main(int argc, char *argv[]) {
                  "......................\n"
                  "......................\n"
                  "......................\n"
-                 "......................\n"
-                 "......................\n"
-                 "......................\n"
-                 "......................\n"
-                 "......................\n"
-                 "......................\n"
-                 "......................\n"
-                 "......................\n"
                  "......................";
 
-    holy_ground_string = "0,,,,,,,,,,,,,,,,,,,,,\n"
-                         ",,,,,,,,,,,,,,,,,,,,,,\n"
-                         ",,,,,,,,,,,.,,,,,,,,,,\n"
-                         ",,,,,,,,,,...,,,,,,,,,\n"
-                         ",,,,,,,,,.....,,,,,,,,\n"
-                         ",,,,,,,,.......,,,,,,,\n"
-                         ",,,,,,,.........,,,,,,\n"
-                         ",,,,,,...........,,,,,\n"
-                         ",,,,,.............,,,,\n"
-                         ",,,,...............,,,\n"
-                         ",,,.................,,\n"
-                         ",,...................,\n"
-                         ",,,.................,,\n"
-                         ",,,,...............,,,\n"
-                         ",,,,,.............,,,,\n"
-                         ",,,,,,...........,,,,,\n"
-                         ",,,,,,,.........,,,,,,\n"
-                         ",,,,,,,,.......,,,,,,,\n"
-                         ",,,,,,,,,.....,,,,,,,,\n"
-                         ",,,,,,,,,,...,,,,,,,,,\n"
-                         ",,,,,,,,,,,.,,,,,,,,,,\n"
-                         ",,,,,,,,,,,,,,,,,,,,,,";
+    holy_ground_string = "0123456789aba987654321\n"
+                         "123456789abcba98765432\n"
+                         "23456789abcdcba9876543\n"
+                         "3456789abcdedcba987654\n"
+                         "456789abcdefedcba98765\n"
+                         "56789abcdef.fedcba9876\n"
+                         "6789abcdef...fedcba987\n"
+                         "789abcdef.....fedcba98\n"
+                         "6789abcdef...fedcba987\n"
+                         "56789abcdef.fedcba9876\n"
+                         "456789abcdefedcba98765\n"
+                         "3456789abcdedcba987654\n"
+                         "23456789abcdcba9876543\n"
+                         "123456789abcba98765432";
 
     map_load_from_string(map_string);
     holy_ground_calculate();
     // puts(holy_ground_to_string());
     assert(strcmp(holy_ground_to_string(), holy_ground_string) == 0);
 
-    map_string = "0.........................\n"
-                 "..%%%%%%..................\n"
-                 "..%.......................\n"
-                 "..%.......................\n"
-                 "..%.......................\n"
-                 "..%.......................\n"
-                 "..%.......................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................\n"
-                 "..........................";
+    map_string = "0.....................%\n"
+                 "..%%%%%%%%............%\n"
+                 "..%...................%\n"
+                 "..%...................%\n"
+                 "..%...................%\n"
+                 "..%...................%\n"
+                 "..%...................%\n"
+                 "..%...................%\n"
+                 "......................%\n"
+                 "......................%\n"
+                 "......................%\n"
+                 "%%%%%%%%%%%%%%%%%%%%%%%";
 
-    holy_ground_string = "0,,,,,,,,,,,,.,,,,,,,,,,,,\n"
-                         ",,%%%%%%,,,,...,,,,,,,,,,,\n"
-                         ",,%...,,,,,.....,,,,,,,,,,\n"
-                         ",,%....,,,.......,,,,,,,,,\n"
-                         ",,%.....,.........,,,,,,,,\n"
-                         ",,%,...............,,,,,,,\n"
-                         ",,%,,...............,,,,,,\n"
-                         ",,,,,,...............,,,,,\n"
-                         ",,,,,.................,,,,\n"
-                         ",,,,...................,,,\n"
-                         ",,,.....................,,\n"
-                         ",,.......................,\n"
-                         ",.........................\n"
-                         "..........................\n"
-                         ",.........................\n"
-                         ",,.......................,\n"
-                         ",,,.....................,,\n"
-                         ",,,,...................,,,\n"
-                         ",,,,,.................,,,,\n"
-                         ",,,,,,...............,,,,,\n"
-                         ",,,,,,,.............,,,,,,\n"
-                         ",,,,,,,,...........,,,,,,,\n"
-                         ",,,,,,,,,.........,,,,,,,,\n"
-                         ",,,,,,,,,,.......,,,,,,,,,\n"
-                         ",,,,,,,,,,,.....,,,,,,,,,,\n"
-                         ",,,,,,,,,,,,...,,,,,,,,,,,";
+    holy_ground_string = "0123456789abcdef......%\n"
+                         "12%%%%%%%%bcdef.......%\n"
+                         "23%....fedcdef........%\n"
+                         "34%.....fedef.........%\n"
+                         "45%f.....fef..........%\n"
+                         "56%ef.....f...........%\n"
+                         "67%def................%\n"
+                         "78%cdef...............%\n"
+                         "89abcdef..............%\n"
+                         "9abcdef...............%\n"
+                         "abcdef................%\n"
+                         "%%%%%%%%%%%%%%%%%%%%%%%";
 
     map_load_from_string(map_string);
     holy_ground_calculate();
